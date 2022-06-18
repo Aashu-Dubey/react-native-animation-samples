@@ -1,0 +1,345 @@
+import React from 'react';
+import {
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  useColorScheme,
+  View,
+} from 'react-native';
+import Animated, {
+  Easing,
+  SharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { SFSymbol } from 'react-native-sfsymbols';
+
+interface ButtonType {
+  icon: string;
+  title: string;
+  color: string;
+  index: number;
+  activeY: SharedValue<number>;
+  offset: SharedValue<number>;
+}
+
+const isIos = Platform.OS === 'ios';
+
+const COLORS = [
+  'rgb(149, 135, 245)',
+  'rgb(166, 210, 160)',
+  'rgb(91, 139, 246)',
+  'rgb(229, 168, 85)',
+  'rgb(234, 125, 125)',
+  'rgb(186, 134, 230)',
+  'rgb(233, 198, 83)',
+];
+
+const ICONS = [
+  isIos ? 'scribble' : 'gesture',
+  isIos ? 'lasso' : 'voicemail',
+  isIos ? 'plus.bubble' : 'add-comment',
+  isIos ? 'wand.and.stars' : 'auto-fix-high',
+  isIos ? 'eyedropper' : 'colorize',
+  isIos ? 'rotate.3d' : '360',
+  isIos ? 'dial' : 'dialpad',
+  isIos ? 'perspective' : 'pie-chart-outlined',
+];
+
+const BUTTONS_LIST = [
+  { title: 'Draw', icon: ICONS[0], color: COLORS[0] },
+  { title: 'Lasso', icon: ICONS[1], color: COLORS[1] },
+  { title: 'Comment', icon: ICONS[2], color: COLORS[2] },
+  { title: 'Enhance', icon: ICONS[3], color: COLORS[3] },
+  { title: 'Picker', icon: ICONS[4], color: COLORS[4] },
+  { title: 'Rotate', icon: ICONS[5], color: COLORS[5] },
+  { title: 'Dial', icon: ICONS[6], color: COLORS[6] },
+  { title: 'Graphic', icon: ICONS[7], color: COLORS[0] },
+
+  { title: 'Draw', icon: ICONS[0], color: COLORS[1] },
+  { title: 'Lasso', icon: ICONS[1], color: COLORS[2] },
+  { title: 'Comment', icon: ICONS[2], color: COLORS[3] },
+  { title: 'Enhance', icon: ICONS[3], color: COLORS[4] },
+  { title: 'Picker', icon: ICONS[4], color: COLORS[5] },
+  { title: 'Rotate', icon: ICONS[5], color: COLORS[6] },
+  { title: 'Dial', icon: ICONS[6], color: COLORS[0] },
+  { title: 'Graphic', icon: ICONS[7], color: COLORS[1] },
+
+  { title: 'Draw', icon: ICONS[0], color: COLORS[2] },
+  { title: 'Lasso', icon: ICONS[1], color: COLORS[3] },
+  { title: 'Comment', icon: ICONS[2], color: COLORS[4] },
+  { title: 'Enhance', icon: ICONS[3], color: COLORS[5] },
+  { title: 'Picker', icon: ICONS[4], color: COLORS[6] },
+  { title: 'Rotate', icon: ICONS[5], color: COLORS[0] },
+  { title: 'Dial', icon: ICONS[6], color: COLORS[1] },
+  { title: 'Graphic', icon: ICONS[7], color: COLORS[2] },
+];
+
+const ITEM_HEIGHT = 50 + 8 * 2; // 50 = icon height, 8 * 2 = top + bottom padding
+const TOOLBAR_HEIGHT = 50 * 7 + 16 * 8; // 50 = icon height, 7 = total visible items, 16 * 8 = 7 item's and +1 for main toolbar top + bottom padding (16)
+const TOTAL_HEIGHT = ITEM_HEIGHT * 24 + 16; // == 1600, 24 == item count, 16 == top + bottom padding
+
+const Button: React.FC<ButtonType> = ({
+  icon,
+  title,
+  color,
+  index,
+  activeY,
+  offset,
+}) => {
+  const itemEndPos = (index + 1) * ITEM_HEIGHT + 8; // 8 is for top padding here
+  const itemStartPos = itemEndPos - ITEM_HEIGHT;
+
+  const isItemActive = useDerivedValue(() => {
+    const pressedPoint = activeY.value + offset.value;
+    const isValid = pressedPoint >= itemStartPos && pressedPoint < itemEndPos;
+    return activeY.value !== 0 && isValid ? true : false;
+  }, [activeY]);
+
+  const viewStyle = useAnimatedStyle(() => {
+    // Max user can scroll (max scroll offset)
+    // To activate Rubberbanding effect after overscroll on iOS
+    const endScrollLimit = TOTAL_HEIGHT - TOOLBAR_HEIGHT;
+    const scrollValidLimit = offset.value > 0 ? endScrollLimit : 0;
+
+    const isItemOutOfView =
+      itemEndPos < offset.value || itemStartPos > offset.value + TOOLBAR_HEIGHT;
+
+    return {
+      width: withSpring(isItemActive.value ? 140 : 50, { damping: 15 }),
+      // For Scroll Rubberbanding effect
+      top:
+        offset.value < 0 // Top
+          ? (index + 1) * Math.abs(offset.value / 10)
+          : offset.value > endScrollLimit // Bottom
+          ? -(24 - index + 1) * Math.abs((offset.value - scrollValidLimit) / 10)
+          : 0,
+      // translate & scaling when icon is (in)active
+      transform: [
+        {
+          translateX: withTiming(isItemActive.value ? 55 : 0, {
+            duration: 250,
+            // easing: Easing.inOut(Easing.cubic),
+            easing: Easing.out(Easing.quad),
+          }),
+        },
+        // Item scaling, 1.2 = Active, 0.4 = out of view, 1 = default
+        {
+          scale: withTiming(
+            isItemActive.value ? 1.2 : isItemOutOfView ? 0.4 : 1,
+            { duration: 250 },
+          ),
+        },
+      ],
+    };
+  });
+
+  // Scale down the view that contains the icon,
+  // so that container view's scaling when it's active, have no effect on the icon
+  const innerViewStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: withTiming(isItemActive.value ? 0.8 : 1, { duration: 250 }) },
+      ],
+    };
+  });
+
+  const titleOpacity = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isItemActive.value ? 1 : 0, { duration: 250 }),
+    };
+  }, [isItemActive]);
+
+  return (
+    <Animated.View
+      style={[styles.buttonContainer, { backgroundColor: color }, viewStyle]}>
+      <Animated.View style={[innerViewStyle]}>
+        {isIos ? (
+          <SFSymbol
+            name={icon}
+            weight="semibold"
+            scale="large"
+            color="white"
+            size={20}
+            resizeMode="center"
+            multicolor={false}
+            style={{ padding: 12 }}
+          />
+        ) : (
+          <Icon name={icon} color="white" size={24} />
+        )}
+      </Animated.View>
+
+      <Animated.Text style={[styles.buttonTitle, titleOpacity]}>
+        {title}
+      </Animated.Text>
+    </Animated.View>
+  );
+};
+
+const Toolbar = () => {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  // Active press point within TOOLBAR_HEIGHT, 0 when not active.
+  const activeY = useSharedValue(0);
+  // Contains list scroll offset from top. In (-) when user scroll past the top on iOS (important to activate Rubberbanding effect).
+  const scrollOffset = useSharedValue(0);
+  // This activates Pan Gesture only after long press, avoiding conflict with scrolling.
+  const isGestureActive = useSharedValue(false);
+
+  // Activating gestures only when any of the items is active (after long press)
+  // Ref:- "https://github.com/software-mansion/react-native-gesture-handler/issues/1933"
+  const dragGesture = Gesture.Pan()
+    .manualActivation(true)
+    .onTouchesMove((_, state) => {
+      isGestureActive.value ? state.activate() : state.fail();
+    })
+    .onStart(_e => {
+      activeY.value = _e.y;
+    })
+    .onUpdate(e => {
+      activeY.value = e.y;
+    })
+    .onEnd(() => {
+      activeY.value = 0;
+    })
+    .onFinalize(() => {
+      isGestureActive.value = false;
+    });
+
+  const longPressGesture = Gesture.LongPress()
+    .minDuration(200)
+    .onStart(_event => {
+      isGestureActive.value = true;
+      activeY.value = _event.y;
+    })
+    .onEnd(_event => {
+      activeY.value = 0;
+    });
+
+  const scrollHandler = useAnimatedScrollHandler(e => {
+    scrollOffset.value = e.contentOffset?.y ?? 0;
+  });
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <SafeAreaView style={themeStyles(isDarkMode).container}>
+        <View>
+          <View
+            style={[styles.toolbarView, themeStyles(isDarkMode).toolbarView]}
+          />
+          <GestureDetector
+            gesture={Gesture.Simultaneous(dragGesture, longPressGesture)}>
+            <Animated.FlatList
+              style={styles.buttonListView}
+              contentContainerStyle={{ padding: 8 }}
+              onScroll={scrollHandler}
+              scrollEventThrottle={16}
+              showsVerticalScrollIndicator={false}
+              data={BUTTONS_LIST}
+              renderItem={({ item, index }) => (
+                <Button
+                  index={index}
+                  activeY={activeY}
+                  offset={scrollOffset}
+                  {...item}
+                />
+              )}
+            />
+            {/* <Animated.ScrollView
+              style={{
+                position: 'absolute',
+                height: TOOLBAR_HEIGHT,
+                width: '100%',
+                marginHorizontal: 24,
+                marginVertical: 40,
+              }}
+              // waitFor={gestureRef}
+              onScroll={scrollHandler}
+              scrollEventThrottle={16}
+              contentContainerStyle={{ padding: 8 }}
+              showsVerticalScrollIndicator={false}>
+              {BUTTONS_LIST.map((btn, idx) => (
+                <Button
+                  key={idx}
+                  index={idx}
+                  activeY={activeY}
+                  offset={scrollOffset}
+                  {...btn}
+                />
+              ))}
+            </Animated.ScrollView> */}
+          </GestureDetector>
+        </View>
+      </SafeAreaView>
+    </GestureHandlerRootView>
+  );
+};
+
+const styles = StyleSheet.create({
+  toolbarView: {
+    width: 66,
+    height: TOOLBAR_HEIGHT,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginHorizontal: 24,
+    marginVertical: 40,
+    shadowColor: 'grey',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.44,
+    shadowRadius: 10.32,
+    elevation: 32,
+  },
+  buttonListView: {
+    position: 'absolute',
+    height: TOOLBAR_HEIGHT,
+    width: '100%',
+    marginHorizontal: 24,
+    marginVertical: 40,
+    // zIndex: 99,
+    // Note:- This elevation here is just to avoid the scroll not working issue on Android. It won't show unless 'backgroundColor' is added.
+    elevation: 32,
+  },
+  buttonContainer: {
+    width: /* icon === 'lasso' ? 'auto' : */ 50,
+    height: 50,
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    marginVertical: 8,
+    padding: 13,
+    alignItems: 'center',
+  },
+  buttonTitle: {
+    marginLeft: 12,
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+const themeStyles = (isDarkMode: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDarkMode ? '#313a44' : 'white',
+    },
+    toolbarView: {
+      backgroundColor: isDarkMode ? '#313a44' : 'white',
+      shadowColor: isDarkMode ? 'rgb(128, 128, 128, 0.6)' : 'grey',
+    },
+  });
+
+export default Toolbar;
