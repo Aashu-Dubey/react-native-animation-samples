@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -24,10 +24,12 @@ interface PaletteProp {
   colors: string[];
   index: number;
   activeGesture: SharedValue<number>;
+  activeColor: string;
+  onColorPress: (color: string) => void;
 }
 
 const ITEM_WIDTH = 60;
-const ITEM_HEIGHT = 200;
+const ITEM_HEIGHT = 250;
 
 const COLOR_PALETTE = [
   ['rgb(195, 107, 88)', 'rgb(216, 160, 164)', 'rgb(209, 178, 195)'],
@@ -42,6 +44,8 @@ const PaletteItem: React.FC<PaletteProp> = ({
   colors,
   index,
   activeGesture,
+  activeColor,
+  onColorPress,
 }) => {
   const viewStyle = useAnimatedStyle(() => {
     const angle = (activeGesture.value / (COLOR_PALETTE.length - 1)) * index;
@@ -55,6 +59,11 @@ const PaletteItem: React.FC<PaletteProp> = ({
     };
   }, [activeGesture]);
 
+  const onAnchorPress = useCallback(
+    () => (activeGesture.value = activeGesture.value === 0 ? 90 : 0),
+    [activeGesture],
+  );
+
   return (
     <Animated.View
       style={[styles.paletteContainer, styles.paletteSize, viewStyle]}
@@ -65,6 +74,7 @@ const PaletteItem: React.FC<PaletteProp> = ({
           styles.colorTop,
           { backgroundColor: colors[0] },
         ]}
+        onPress={() => onColorPress(colors[0])}
       />
       <Pressable
         style={[
@@ -72,20 +82,30 @@ const PaletteItem: React.FC<PaletteProp> = ({
           styles.colorMiddle,
           { backgroundColor: colors[1] },
         ]}
+        onPress={() => onColorPress(colors[1])}
       />
       <Pressable
-        style={[
-          styles.colorItemCommon,
-          styles.colorBottom,
-          { backgroundColor: colors[2] },
-        ]}
+        style={[styles.colorItemCommon, { backgroundColor: colors[2] }]}
+        onPress={() => onColorPress(colors[2])}
       />
+      <Pressable style={styles.anchorContainer} onPress={onAnchorPress}>
+        <View style={[styles.anchorOuterCircle, { borderColor: activeColor }]}>
+          <View
+            style={[
+              styles.anchorInnerCircle,
+              { backgroundColor: activeColor, borderColor: activeColor },
+            ]}
+          />
+        </View>
+      </Pressable>
     </Animated.View>
   );
 };
 
 const ColorSwatch = () => {
   const activeGesture = useSharedValue(0);
+
+  const [activeColor, setActivecolor] = useState('rgb(64, 68, 88)');
 
   const calculateDegree = useCallback(
     (e: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
@@ -105,34 +125,29 @@ const ColorSwatch = () => {
 
   const dragGesture = Gesture.Pan()
     .onStart(e => {
-      // activeGesture.value = 90 / (200 / _e.y);
       activeGesture.value = calculateDegree(e);
     })
     .onUpdate(e => {
-      // activeGesture.value = 90 / (200 / e.y);
       activeGesture.value = calculateDegree(e);
     })
     .onEnd(() => {
       activeGesture.value = activeGesture.value > 90 ? 90 : 0;
     });
 
-  const tapGesture = Gesture.Tap().onStart(
-    () => (activeGesture.value = activeGesture.value === 0 ? 90 : 0),
-  );
-
   return (
     <>
-      <StatusBar barStyle={'light-content'} backgroundColor="#000000" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+      <StatusBar barStyle={'light-content'} backgroundColor={activeColor} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: activeColor }}>
         <BackButton />
 
         <View style={{ flex: 1, margin: 40, justifyContent: 'flex-end' }}>
-          <GestureDetector gesture={Gesture.Race(dragGesture, tapGesture)}>
+          <GestureDetector gesture={dragGesture}>
             <View style={styles.paletteSize}>
               {COLOR_PALETTE.map((colors, index) => (
                 <PaletteItem
                   key={index}
-                  {...{ colors, index, activeGesture }}
+                  onColorPress={setActivecolor}
+                  {...{ activeColor, colors, index, activeGesture }}
                 />
               ))}
             </View>
@@ -162,10 +177,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   colorMiddle: { marginBottom: 4 },
-  colorBottom: {
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
   anchorContainer: {
     height: 50,
     width: 50,
