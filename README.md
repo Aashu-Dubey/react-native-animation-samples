@@ -2,7 +2,10 @@
 
 Animation samples in React Native.
 
-- [Custom toolbar](./src/custom_toolbar/README.md):- A Custom playful, interactive toolbar with cool gesture based interruptible animations.
+🛠 Live preview the samples in [this Expo Snack](https://snack.expo.dev/@ashu_dubey/react-native-animation-samples)
+
+- [Custom toolbar](./src/samples/custom_toolbar#readme):- A Custom playful, interactive toolbar with cool gesture based interruptible animations.
+- [Color Swatch](./src/samples/color_swatch#readme):- A Color Swatch that plays a circular rotation based on user gestures.
 
 ## 🖥 Running locally
 

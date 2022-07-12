@@ -17,18 +17,14 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SFSymbol } from 'react-native-sfsymbols';
+import BackButton from '../../components/BackButton';
+import * as theme from '../../theme';
 
 interface ButtonType {
-  icon: string;
-  title: string;
-  color: string;
+  item: typeof BUTTONS_LIST[0];
   index: number;
   activeY: SharedValue<number>;
   offset: SharedValue<number>;
@@ -90,14 +86,7 @@ const ITEM_HEIGHT = 50 + 8 * 2; // 50 = icon height, 8 * 2 = top + bottom paddin
 const TOOLBAR_HEIGHT = 50 * 7 + 16 * 8; // 50 = icon height, 7 = total visible items, 16 * 8 = 7 item's and +1 for main toolbar top + bottom padding (16)
 const TOTAL_HEIGHT = ITEM_HEIGHT * 24 + 16; // == 1600, 24 == item count, 16 == top + bottom padding
 
-const Button: React.FC<ButtonType> = ({
-  icon,
-  title,
-  color,
-  index,
-  activeY,
-  offset,
-}) => {
+const Button: React.FC<ButtonType> = ({ item, index, activeY, offset }) => {
   const itemEndPos = (index + 1) * ITEM_HEIGHT + 8; // 8 is for top padding here
   const itemStartPos = itemEndPos - ITEM_HEIGHT;
 
@@ -130,7 +119,6 @@ const Button: React.FC<ButtonType> = ({
         {
           translateX: withTiming(isItemActive.value ? 55 : 0, {
             duration: 250,
-            // easing: Easing.inOut(Easing.cubic),
             easing: Easing.out(Easing.quad),
           }),
         },
@@ -163,11 +151,16 @@ const Button: React.FC<ButtonType> = ({
 
   return (
     <Animated.View
-      style={[styles.buttonContainer, { backgroundColor: color }, viewStyle]}>
+      style={[
+        styles.buttonContainer,
+        { backgroundColor: item.color },
+        viewStyle,
+      ]}
+    >
       <Animated.View style={[innerViewStyle]}>
         {isIos ? (
           <SFSymbol
-            name={icon}
+            name={item.icon}
             weight="semibold"
             scale="large"
             color="white"
@@ -177,12 +170,12 @@ const Button: React.FC<ButtonType> = ({
             style={{ padding: 12 }}
           />
         ) : (
-          <Icon name={icon} color="white" size={24} />
+          <Icon name={item.icon} color="white" size={24} />
         )}
       </Animated.View>
 
       <Animated.Text style={[styles.buttonTitle, titleOpacity]}>
-        {title}
+        {item.title}
       </Animated.Text>
     </Animated.View>
   );
@@ -233,15 +226,21 @@ const Toolbar = () => {
   });
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+    <>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.toolbar(isDarkMode).bg}
+      />
       <SafeAreaView style={themeStyles(isDarkMode).container}>
+        <BackButton />
+
         <View>
           <View
             style={[styles.toolbarView, themeStyles(isDarkMode).toolbarView]}
           />
           <GestureDetector
-            gesture={Gesture.Simultaneous(dragGesture, longPressGesture)}>
+            gesture={Gesture.Simultaneous(dragGesture, longPressGesture)}
+          >
             <Animated.FlatList
               style={styles.buttonListView}
               contentContainerStyle={{ padding: 8 }}
@@ -250,41 +249,13 @@ const Toolbar = () => {
               showsVerticalScrollIndicator={false}
               data={BUTTONS_LIST}
               renderItem={({ item, index }) => (
-                <Button
-                  index={index}
-                  activeY={activeY}
-                  offset={scrollOffset}
-                  {...item}
-                />
+                <Button offset={scrollOffset} {...{ item, activeY, index }} />
               )}
             />
-            {/* <Animated.ScrollView
-              style={{
-                position: 'absolute',
-                height: TOOLBAR_HEIGHT,
-                width: '100%',
-                marginHorizontal: 24,
-                marginVertical: 40,
-              }}
-              // waitFor={gestureRef}
-              onScroll={scrollHandler}
-              scrollEventThrottle={16}
-              contentContainerStyle={{ padding: 8 }}
-              showsVerticalScrollIndicator={false}>
-              {BUTTONS_LIST.map((btn, idx) => (
-                <Button
-                  key={idx}
-                  index={idx}
-                  activeY={activeY}
-                  offset={scrollOffset}
-                  {...btn}
-                />
-              ))}
-            </Animated.ScrollView> */}
           </GestureDetector>
         </View>
       </SafeAreaView>
-    </GestureHandlerRootView>
+    </>
   );
 };
 
@@ -308,7 +279,6 @@ const styles = StyleSheet.create({
     width: '100%',
     marginHorizontal: 24,
     marginVertical: 40,
-    // zIndex: 99,
     // Note:- This elevation here is just to avoid the scroll not working issue on Android. It won't show unless 'backgroundColor' is added.
     elevation: 32,
   },
@@ -334,11 +304,11 @@ const themeStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDarkMode ? '#313a44' : 'white',
+      backgroundColor: theme.toolbar(isDarkMode).bg,
     },
     toolbarView: {
-      backgroundColor: isDarkMode ? '#313a44' : 'white',
-      shadowColor: isDarkMode ? 'rgb(128, 128, 128, 0.6)' : 'grey',
+      backgroundColor: theme.toolbar(isDarkMode).bg,
+      shadowColor: theme.toolbar(isDarkMode).shadow,
     },
   });
 

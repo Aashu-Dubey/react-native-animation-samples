@@ -1,8 +1,8 @@
 import React from 'react';
-import Toolbar from './src/custom_toolbar/Toolbar';
+import AppControlFlow from './src/AppControlFlow';
 
 const App = () => {
-  return <Toolbar />;
+  return <AppControlFlow />;
 };
 
 export default App;

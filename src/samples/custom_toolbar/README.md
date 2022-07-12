@@ -2,8 +2,6 @@
 
 A Custom playful, interactive toolbar made in React Native with cool gesture based interruptible animations.
 
-🛠 Live preview the sample in [this Expo Snack](https://snack.expo.dev/@ashu_dubey/react-native-animation-samples)
-
 ## 👀 This is how it looks
 
 https://user-images.githubusercontent.com/46301285/174402436-43cdf090-443e-4022-85ba-1cfa93937dcb.mov
