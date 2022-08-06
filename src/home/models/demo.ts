@@ -15,4 +15,11 @@ export const DEMOS = [
     background: AppImages.color_swatch,
     screenName: 'color_swatch',
   },
+  {
+    name: 'Grid Magnification',
+    description:
+      'A grid list view that displays Magnify effect on long press & drag, focusing on the items near the touch area within a radius.',
+    background: AppImages.grid_magnification,
+    screenName: 'grid_magnification',
+  },
 ];

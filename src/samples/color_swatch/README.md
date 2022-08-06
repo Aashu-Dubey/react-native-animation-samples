@@ -14,3 +14,7 @@ https://user-images.githubusercontent.com/46301285/178355435-b9a3eab5-0f06-4cb0-
 ## 🌻 Motivation
 
 Inspired by [this original SwiftUI implementation](https://twitter.com/philipcdavis/status/1544703548423778311) by [@philipcdavis](https://twitter.com/philipcdavis).
+
+## 🔗 Links
+
+- [Twitter Post](https://twitter.com/aashudubey_ad/status/1545139506457690112)

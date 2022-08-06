@@ -23,3 +23,8 @@ https://user-images.githubusercontent.com/46301285/174402436-43cdf090-443e-4022-
 ## 🌻 Motivation
 
 Inspired by [this original iOS implementation](https://twitter.com/jmtrivedi/status/1517561485622321152) by [jtrivedi](https://github.com/jtrivedi).
+
+## 🔗 Links
+
+- [Twitter Post](https://twitter.com/aashudubey_ad/status/1539354978266935296)
+- [Youtube Short](https://youtube.com/shorts/aSqV4uT0wgk?feature=share)

@@ -1,10 +1,14 @@
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Config from '../Config';
 
-const BackButton: React.FC = () => {
+interface Props {
+  style?: StyleProp<ViewStyle>;
+}
+
+const BackButton: React.FC<Props> = ({ style }) => {
   const navigation = useNavigation();
 
   return (
@@ -12,6 +16,7 @@ const BackButton: React.FC = () => {
       style={({ pressed }) => [
         styles.backBtn,
         { opacity: !Config.isAndroid && pressed ? 0.6 : 1 },
+        style,
       ]}
       android_ripple={{ color: 'darkgrey', borderless: true, radius: 22 }}
       onPress={() => navigation.goBack()}
