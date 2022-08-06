@@ -60,8 +60,6 @@ const Box: React.FC<BoxSkiaProps> = ({
       // that value with this median (correct name?) will distribute items to a distance, basically forming a Circle.
       const median = (distance.current - RADIUS) / RADIUS;
 
-      // translateX = (distance / RADIUS) * (touchPos.current.x - posX) * median;
-      // translateY = (distance / RADIUS) * (touchPos.current.y - posY) * median;
       translateX = (touchPos.current.x - origin.x) * median;
       translateY = (touchPos.current.y - origin.y) * median;
 

@@ -56,17 +56,6 @@ const Box = ({ smallWidth, smallHeight, index, touchPos }: BoxProps) => {
       transform: [
         { translateX: withSpring(translateX, { damping: 20 }) },
         { translateY: withSpring(translateY, { damping: 20 }) },
-        /* {
-          scale: withSpring(
-            distance === 0
-              ? 1
-              : distance > RADIUS + (smallWidth + smallHeight) / 2
-              ? 0.15
-              : // : ((radius - distance) / radius) * 1.8,
-                interpolate(distance, [0, RADIUS], [1.6, 0.6]),
-            { damping: 100 },
-          ),
-        }, */
         {
           scale: withSpring(
             interpolate(

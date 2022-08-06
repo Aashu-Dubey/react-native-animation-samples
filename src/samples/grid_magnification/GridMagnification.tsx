@@ -32,10 +32,6 @@ const Box: React.FC<BoxProps> = ({
   const posX = col * smallWidth + smallWidth / 2;
   const posY = row * smallHeight + smallHeight / 2;
 
-  /* const distance = Math.sqrt(
-    Math.pow(bigWidth / 2 - posX, 2) + Math.pow(bigHeight / 2 - posY, 2),
-  ); */
-
   const viewStyle = useAnimatedStyle(() => {
     // Getting distance between two points using equation, d=√((x2 – x1)² + (y2 – y1)²)
     const distance = touchPos.value
@@ -45,30 +41,6 @@ const Box: React.FC<BoxProps> = ({
         )
       : 0;
 
-    /* const touchRow = Math.ceil(touchPos.value?.x ?? 0 / smallWidth);
-    const touchCol = Math.ceil(touchPos.value?.y ?? 0 / smallHeight);
-    const touchPosX = touchCol * smallWidth + smallWidth / 2;
-    const touchPosY = touchRow * smallHeight + smallHeight / 2; */
-
-    // const translateX = bigWidth / 2 - posX;
-    // const translateY = bigHeight / 2 - posY;
-    /* const translateX = touchPos.value
-      ? touchPos.value.x - posX - (touchPos.value.x > posX ? radius : -radius)
-      : 0;
-    const translateY = touchPos.value
-      ? touchPos.value.y - posY - (touchPos.value.y > posY ? radius : -radius)
-      : 0; */
-
-    // let translateX = touchPos.value
-    //   ? /* distance > bigHeight / 2
-    //     ? touchPos.value.x - posX
-    //     : */ (distance / radius) * (touchPos.value.x - posX) * 0.25
-    //   : 0;
-    // let translateY = touchPos.value
-    //   ? /* distance > bigHeight / 2
-    //     ? touchPos.value.y - posY
-    //     : */ (distance / radius) * (touchPos.value.y - posY) * 0.25
-    //   : 0;
     let translateX = 0,
       translateY = 0;
     if (touchPos.value) {
@@ -141,7 +113,6 @@ const GridMagnification: React.FC = () => {
   const bigWidth = window.width - 16;
   const bigHeight = window.height - inset.top - inset.bottom - 80;
 
-  // const totalItems = COL * ROW;
   const smallWidth = bigWidth / COL;
   const smallHeight = bigHeight / ROW;
 
