@@ -7,6 +7,7 @@ Animation samples in React Native.
 - [Custom toolbar](./src/samples/custom_toolbar#readme):- A Custom playful, interactive toolbar with cool gesture based interruptible animations.
 - [Color Swatch](./src/samples/color_swatch#readme):- A Color Swatch that plays a circular rotation based on user gestures.
 - [Grid Magnification](./src/samples/grid_magnification#readme):- A grid list view that displays Magnify effect on long press & drag, focusing on the items near the touch area within a radius.
+- [Rope Physics](./src/samples/rope_physics#readme):- A realistic looking gesture controlled, bezier based Rope UI implementation and related samples.
 
 ### Other samples (Incomplete)
 

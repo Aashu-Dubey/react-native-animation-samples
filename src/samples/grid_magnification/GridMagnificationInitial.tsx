@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { BackButton } from '../../components';
 import { BoxProps } from './types';
 
 const COL = 12;
@@ -90,8 +91,8 @@ const GridMagnification: React.FC = () => {
   const touchPos = useSharedValue<{ x: number; y: number } | null>(null);
   const isGestureActive = useSharedValue(false);
 
-  const bigWidth = window.width;
-  const bigHeight = window.height - inset.top - inset.bottom;
+  const bigWidth = window.width - 16;
+  const bigHeight = window.height - inset.top - inset.bottom - 80;
 
   const smallWidth = bigWidth / COL;
   const smallHeight = bigHeight / ROW;
@@ -128,6 +129,7 @@ const GridMagnification: React.FC = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
+      <BackButton style={{ marginTop: 0, marginLeft: 12 }} />
       <GestureDetector
         gesture={Gesture.Simultaneous(dragGesture, longPressGesture)}
       >
@@ -150,6 +152,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignSelf: 'center',
   },
   boxView: {
     flex: 1,

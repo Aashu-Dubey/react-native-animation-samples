@@ -21,6 +21,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { BackButton } from '../../components';
 import { APP_ICONS } from './icons';
 import { BoxSkiaProps } from './types';
 
@@ -134,8 +135,8 @@ const GridMagnification: React.FC = () => {
   const window = useWindowDimensions();
   const inset = useSafeAreaInsets();
 
-  const bigWidth = window.width;
-  const bigHeight = window.height - inset.top - inset.bottom;
+  const bigWidth = window.width - 16;
+  const bigHeight = window.height - inset.top - inset.bottom - 80;
   const smallWidth = bigWidth / COL;
   const smallHeight = bigHeight / ROW;
 
@@ -155,6 +156,7 @@ const GridMagnification: React.FC = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
+      <BackButton style={{ marginTop: 0, marginLeft: 12 }} />
       <Canvas
         style={[{ width: bigWidth, height: bigHeight }, styles.container]}
         onTouch={onTouch}
@@ -174,6 +176,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignSelf: 'center',
   },
   boxView: {
     flex: 1,

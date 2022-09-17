@@ -20,7 +20,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SFSymbol } from 'react-native-sfsymbols';
-import BackButton from '../../components/BackButton';
+import { BackButton } from '../../components';
 import * as theme from '../../theme';
 
 interface ButtonType {

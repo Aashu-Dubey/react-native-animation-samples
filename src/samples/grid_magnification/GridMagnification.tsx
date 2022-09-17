@@ -12,7 +12,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import BackButton from '../../components/BackButton';
+import { BackButton } from '../../components';
 import { APP_ICONS } from './icons';
 import { BoxProps } from './types';
 

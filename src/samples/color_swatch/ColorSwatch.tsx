@@ -18,7 +18,7 @@ import {
   GestureUpdateEvent,
   PanGestureHandlerEventPayload,
 } from 'react-native-gesture-handler';
-import BackButton from '../../components/BackButton';
+import { BackButton } from '../../components';
 
 interface PaletteProp {
   colors: string[];

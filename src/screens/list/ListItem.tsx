@@ -17,9 +17,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
-import Config from '../Config';
-import { DEMOS } from './models/demo';
-import * as theme from '../theme';
+import Config from '../../Config';
+import { DEMOS } from '../../models/demo';
+import * as theme from '../../theme';
 
 interface ListItemProps {
   data: ListRenderItemInfo<typeof DEMOS[0]>;
@@ -119,7 +119,9 @@ const ListItem: React.FC<ListItemProps> = ({ data, isGrid }) => {
           resizeMode="cover"
         />
         <View style={{ padding: 8, flex: 1 }}>
-          <Text style={themeStyles(isDarkMode).listItemTitle}>{item.name}</Text>
+          <Text style={themeStyles(isDarkMode).listItemTitle} numberOfLines={2}>
+            {item.name}
+          </Text>
           <Text style={themeStyles(isDarkMode).listItemDesc} numberOfLines={2}>
             {item.description}
           </Text>
@@ -142,6 +144,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
+    padding: 4,
   },
   gridItemTitle: {
     fontSize: 24,
