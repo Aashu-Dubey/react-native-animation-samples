@@ -123,7 +123,7 @@ const UnitView: React.FC<UnitViewProps> = ({
   );
 };
 
-const PlugBulbsView = () => {
+const PlugSocketsView = () => {
   const isDarkMode = useColorScheme() === 'dark';
   const inset = useSafeAreaInsets();
 
@@ -307,4 +307,4 @@ const themeStyles = (isDarkMode: boolean) =>
     },
   });
 
-export default PlugBulbsView;
+export default PlugSocketsView;

@@ -9,7 +9,7 @@ import GridMagSamples, {
   GridMagnificationSkia,
 } from './samples/grid_magnification';
 import { RopePhysics, RopeViewSkia, RopeViewSvg } from './samples/rope_physics';
-import { PlugBulbsView } from './samples/rope_physics/plug_socket';
+import { PlugSocketsView } from './samples/rope_physics/plug_socket';
 
 const Stack = createNativeStackNavigator();
 
@@ -42,7 +42,7 @@ const AppNavigator = () => {
           <Stack.Screen name="rope_physics" component={RopePhysics} />
           <Stack.Screen name="rope-skia" component={RopeViewSkia} />
           <Stack.Screen name="rope-svg" component={RopeViewSvg} />
-          <Stack.Screen name="rope-sockets-demo" component={PlugBulbsView} />
+          <Stack.Screen name="rope-sockets-demo" component={PlugSocketsView} />
         </Stack.Group>
       </Stack.Group>
     </Stack.Navigator>
