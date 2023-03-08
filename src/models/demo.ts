@@ -13,7 +13,7 @@ export const DEMOS: ListType[] = [
     description:
       'A custom playful, interactive toolbar with cool gesture based interruptible animations.',
     background: AppImages.animated_toolbar,
-    screenName: 'animated_toolbar',
+    screenName: 'toolbar',
   },
   {
     name: 'Color Swatch',
@@ -35,6 +35,23 @@ export const DEMOS: ListType[] = [
       'Some samples showcasing the usage of Rope View Layout implemented using rn-skia & svg.',
     background: AppImages.rope_skia,
     screenName: 'rope_physics',
+  },
+];
+
+export const TOOLBAR: ListType[] = [
+  {
+    name: 'Toolbar Animated',
+    description:
+      'Toolbar implementation using built-in Animated and Gesture APIs.',
+    background: AppImages.animated_toolbar,
+    screenName: 'toolbar-animated',
+  },
+  {
+    name: 'Toolbar Reanimated',
+    description:
+      'Toolbar implementation using react-native-reanimtaed & react-native-gesture-handler.',
+    background: AppImages.animated_toolbar,
+    screenName: 'toolbar-reanimated',
   },
 ];
 

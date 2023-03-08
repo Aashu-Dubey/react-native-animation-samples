@@ -1,7 +1,10 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScene } from './screens';
-import Toolbar from './samples/custom_toolbar/Toolbar';
+import Toolbar, {
+  ToolbarAnimated,
+  ToolbarReanimated,
+} from './samples/custom_toolbar';
 import ColorSwatch from './samples/color_swatch/ColorSwatch';
 import GridMagSamples, {
   GridMagnification,
@@ -19,7 +22,15 @@ const AppNavigator = () => {
       <Stack.Screen name="home_scene" component={HomeScene} />
       {/* Demos */}
       <Stack.Group>
-        <Stack.Screen name="animated_toolbar" component={Toolbar} />
+        <Stack.Group>
+          <Stack.Screen name="toolbar" component={Toolbar} />
+          <Stack.Screen name="toolbar-animated" component={ToolbarAnimated} />
+          <Stack.Screen
+            name="toolbar-reanimated"
+            component={ToolbarReanimated}
+          />
+        </Stack.Group>
+
         <Stack.Screen name="color_swatch" component={ColorSwatch} />
 
         <Stack.Group>

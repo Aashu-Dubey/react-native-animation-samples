@@ -1,6 +1,8 @@
 # React Native Custom Toolbar
 
 A Custom playful, interactive toolbar made in React Native with cool gesture based interruptible animations.
+- [Toolbar.tsx](./Toolbar.tsx):- Implementation using react-native-reanimtaed & react-native-gesture-handler.
+- [ToolbarAnimated.tsx](./ToolbarAnimated.tsx):- Implementation using built-in Animated and Gesture APIs.
 
 ## 👀 This is how it looks
 

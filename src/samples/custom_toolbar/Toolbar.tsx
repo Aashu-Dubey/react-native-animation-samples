@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -20,7 +19,9 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SFSymbol } from 'react-native-sfsymbols';
+import { BUTTONS_LIST } from './buttons';
 import { BackButton } from '../../components';
+import Config from '../../Config';
 import * as theme from '../../theme';
 
 interface ButtonType {
@@ -30,61 +31,12 @@ interface ButtonType {
   offset: SharedValue<number>;
 }
 
-const isIos = Platform.OS === 'ios';
-
-const COLORS = [
-  'rgb(149, 135, 245)',
-  'rgb(166, 210, 160)',
-  'rgb(91, 139, 246)',
-  'rgb(229, 168, 85)',
-  'rgb(234, 125, 125)',
-  'rgb(186, 134, 230)',
-  'rgb(233, 198, 83)',
-];
-
-const ICONS = [
-  isIos ? 'scribble' : 'gesture',
-  isIos ? 'lasso' : 'voicemail',
-  isIos ? 'plus.bubble' : 'add-comment',
-  isIos ? 'wand.and.stars' : 'auto-fix-high',
-  isIos ? 'eyedropper' : 'colorize',
-  isIos ? 'rotate.3d' : '360',
-  isIos ? 'dial' : 'dialpad',
-  isIos ? 'perspective' : 'pie-chart-outlined',
-];
-
-const BUTTONS_LIST = [
-  { title: 'Draw', icon: ICONS[0], color: COLORS[0] },
-  { title: 'Lasso', icon: ICONS[1], color: COLORS[1] },
-  { title: 'Comment', icon: ICONS[2], color: COLORS[2] },
-  { title: 'Enhance', icon: ICONS[3], color: COLORS[3] },
-  { title: 'Picker', icon: ICONS[4], color: COLORS[4] },
-  { title: 'Rotate', icon: ICONS[5], color: COLORS[5] },
-  { title: 'Dial', icon: ICONS[6], color: COLORS[6] },
-  { title: 'Graphic', icon: ICONS[7], color: COLORS[0] },
-
-  { title: 'Draw', icon: ICONS[0], color: COLORS[1] },
-  { title: 'Lasso', icon: ICONS[1], color: COLORS[2] },
-  { title: 'Comment', icon: ICONS[2], color: COLORS[3] },
-  { title: 'Enhance', icon: ICONS[3], color: COLORS[4] },
-  { title: 'Picker', icon: ICONS[4], color: COLORS[5] },
-  { title: 'Rotate', icon: ICONS[5], color: COLORS[6] },
-  { title: 'Dial', icon: ICONS[6], color: COLORS[0] },
-  { title: 'Graphic', icon: ICONS[7], color: COLORS[1] },
-
-  { title: 'Draw', icon: ICONS[0], color: COLORS[2] },
-  { title: 'Lasso', icon: ICONS[1], color: COLORS[3] },
-  { title: 'Comment', icon: ICONS[2], color: COLORS[4] },
-  { title: 'Enhance', icon: ICONS[3], color: COLORS[5] },
-  { title: 'Picker', icon: ICONS[4], color: COLORS[6] },
-  { title: 'Rotate', icon: ICONS[5], color: COLORS[0] },
-  { title: 'Dial', icon: ICONS[6], color: COLORS[1] },
-  { title: 'Graphic', icon: ICONS[7], color: COLORS[2] },
-];
-
-const ITEM_HEIGHT = 50 + 8 * 2; // 50 = icon height, 8 * 2 = top + bottom padding
-const TOOLBAR_HEIGHT = 50 * 7 + 16 * 8; // 50 = icon height, 7 = total visible items, 16 * 8 = 7 item's and +1 for main toolbar top + bottom padding (16)
-const TOTAL_HEIGHT = ITEM_HEIGHT * 24 + 16; // == 1600, 24 == item count, 16 == top + bottom padding
+const ITEM_HEIGHT = 50 + 16; // 50 = icon height, 16 = top + bottom padding
+const TOOLBAR_HEIGHT = ITEM_HEIGHT * 7 + 16; // 50 = button height, 7 = total visible items, 16 = main toolbar's top + bottom padding
+const TOTAL_HEIGHT = ITEM_HEIGHT * BUTTONS_LIST.length + 16; // == 1600, BUTTONS_LIST.length === 24, 16 == top + bottom padding
+// Max user can scroll (max scroll offset)
+// To activate Rubberbanding effect after overscroll on iOS
+const endScrollLimit = TOTAL_HEIGHT - TOOLBAR_HEIGHT;
 
 const Button: React.FC<ButtonType> = ({ item, index, activeY, offset }) => {
   const itemEndPos = (index + 1) * ITEM_HEIGHT + 8; // 8 is for top padding here
@@ -97,9 +49,6 @@ const Button: React.FC<ButtonType> = ({ item, index, activeY, offset }) => {
   }, [activeY]);
 
   const viewStyle = useAnimatedStyle(() => {
-    // Max user can scroll (max scroll offset)
-    // To activate Rubberbanding effect after overscroll on iOS
-    const endScrollLimit = TOTAL_HEIGHT - TOOLBAR_HEIGHT;
     const scrollValidLimit = offset.value > 0 ? endScrollLimit : 0;
 
     const isItemOutOfView =
@@ -157,8 +106,8 @@ const Button: React.FC<ButtonType> = ({ item, index, activeY, offset }) => {
         viewStyle,
       ]}
     >
-      <Animated.View style={[innerViewStyle]}>
-        {isIos ? (
+      <Animated.View style={innerViewStyle}>
+        {Config.isIos ? (
           <SFSymbol
             name={item.icon}
             weight="semibold"
@@ -261,7 +210,7 @@ const Toolbar = () => {
 
 const styles = StyleSheet.create({
   toolbarView: {
-    width: 66,
+    width: 50 + 16,
     height: TOOLBAR_HEIGHT,
     backgroundColor: 'white',
     borderRadius: 12,
