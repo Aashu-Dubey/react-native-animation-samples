@@ -41,6 +41,11 @@ jobs:
       - name: Install node_modules
         run: yarn install --frozen-lockfile
 
+      # In some cases, Gradle is not executable by default, so we do this before the build process
+      - name: Make gradlew executable
+        working-directory: android
+        run: chmod +x ./gradlew
+
       - name: Build Android release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
