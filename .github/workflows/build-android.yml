@@ -53,5 +53,5 @@ jobs:
       - name: Save apk file as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ionic-actions-test
+          name: rn-animation-samples
           path: android/app/build/outputs/apk/release/app-release.apk
