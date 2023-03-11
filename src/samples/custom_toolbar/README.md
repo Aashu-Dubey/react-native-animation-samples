@@ -1,8 +1,15 @@
-# React Native Custom Toolbar
+# Animated Toolbar
+
+<a href="https://youtu.be/27pTWrcEDC4">
+  <img alt="Animated toolbar in react-native" align="right" src="https://i.ytimg.com/vi/27pTWrcEDC4/maxresdefault.jpg" height="180px">
+</a>
 
 A Custom playful, interactive toolbar made in React Native with cool gesture based interruptible animations.
-- [Toolbar.tsx](./Toolbar.tsx):- Implementation using react-native-reanimtaed & react-native-gesture-handler.
-- [ToolbarAnimated.tsx](./ToolbarAnimated.tsx):- Implementation using built-in Animated and Gesture APIs.
+
+## 📽️ [Video](https://youtu.be/27pTWrcEDC4) | [Playlist](https://www.youtube.com/watch?v=27pTWrcEDC4&list=PLpnMM6hhRcchaS1uSpMZfAKYTxZWIlzzN&index=1)
+
+- [Toolbar.tsx](./Toolbar.tsx):- Implementation using [reanimated](https://github.com/software-mansion/react-native-reanimated) & [gesture-handler](https://github.com/software-mansion/react-native-gesture-handler).
+- [ToolbarAnimated.tsx](./ToolbarAnimated.tsx):- Implementation using built-in [Animated](https://reactnative.dev/docs/animations) and [Gesture APIs](https://reactnative.dev/docs/gesture-responder-system).
 
 ## 👀 This is how it looks
 
@@ -28,5 +35,5 @@ Inspired by [this original iOS implementation](https://twitter.com/jmtrivedi/sta
 
 ## 🔗 Links
 
-- [Twitter Post](https://twitter.com/aashudubey_ad/status/1539354978266935296)
-- [Youtube Short](https://youtube.com/shorts/aSqV4uT0wgk?feature=share)
+- **[YouTube Tutorial](https://youtu.be/27pTWrcEDC4)**
+- **Demo: [twitter](https://twitter.com/aashudubey_ad/status/1539354978266935296) \| youtube [short 1](https://youtube.com/shorts/i7xw93xqkRE), [short 2](https://youtube.com/shorts/QMt18WcWyGw)**

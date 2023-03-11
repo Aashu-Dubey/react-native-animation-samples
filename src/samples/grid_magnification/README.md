@@ -29,4 +29,5 @@ Inspired by [this original SwiftUI implementation](https://twitter.com/philipcda
 
 ## 🔗 Links
 
+- [Flutter Grid Magnification](https://github.com/Aashu-Dubey/flutter-samples/tree/main/lib/samples/animations/grid_magnification): Flutter implementation of the same demo.
 - [Twitter Post](https://twitter.com/aashudubey_ad/status/1553434985620656128)

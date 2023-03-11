@@ -1,7 +1,11 @@
 # Rope Physics
 
+<a href="https://youtu.be/27pTWrcEDC4">
+  <img alt="Animated toolbar in react-native" align="right" src="../../assets/demo/rope/rope-sockets-demo.png" height="180px">
+</a>
+
 Some samples for gesture controlled, bezier based rope implementation.
-<br />
+
 There are 2 different solutions based on [react-native-skia](https://github.com/Shopify/react-native-skia) & [react-native-svg](https://github.com/react-native-svg/react-native-svg)
 
 - [RopeViewSkia.tsx](./RopeViewSkia.tsx):- Interactive Rope implementation using react-native-skia.
