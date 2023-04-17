@@ -11,7 +11,7 @@ Some very interesting and challenging animation samples built in react-native
 | <h3>3. Grid Magnification</h3>A grid list view that displays Magnify effect on long press & drag, focusing on the items near the touch area within a radius.<br><br>**[> Browse](./src/samples/grid_magnification#readme)**<br>**> Demo: [twitter](https://twitter.com/aashudubey_ad/status/1553434985620656128)**<br>**> Alternatives: [Flutter](https://github.com/Aashu-Dubey/flutter-samples/tree/main/lib/samples/animations/grid_magnification)** | <a href="./src/samples/grid_magnification#readme" title="Grid Magnification"><img alt="Grid Magnification Preview" src="./src/assets/demo/grid_mag/grid_magnification.png" width="320"></a> |
 | <h3>4. Rope Physics</h3>A realistic looking gesture controlled, bezier based Rope UI implementation and related samples.<br><br>**[> Browse](./src/samples/rope_physics#readme)**<br>**> Demo: [twitter](https://twitter.com/aashudubey_ad/status/1571250425772544000)** | <a href="./src/samples/rope_physics#readme" title="Rope Physics"><img alt="Rope Physics Preview" src="./src/assets/demo/rope/rope-sockets-demo.png" width="320"></a> |
 
-### 🧬 Other samples (Incomplete) 🚧
+## 🧬 Other samples (Incomplete) 🚧
 
 - [Cards Swap](https://github.com/Aashu-Dubey/react-native-animation-samples/tree/cards_swap/src/cards_swap):- A drag/swipe demo where the cards dodge each other with gesture based animations. [See preview](https://twitter.com/aashudubey_ad/status/1543701552820469760)
 

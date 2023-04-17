@@ -119,7 +119,12 @@ const RopeViewSvg: React.FC = () => {
   const renderPlug = (animatedProps: Animated.AnimateProps<GProps>) => (
     <AnimatedGroup animatedProps={animatedProps}>
       <Circle r={PLUG_RADIUS} fill="dodgerblue" />
-      <Circle r={PLUG_RADIUS} stroke="royalblue" strokeWidth={4} />
+      <Circle
+        r={PLUG_RADIUS}
+        stroke="royalblue"
+        fill="transparent"
+        strokeWidth={4}
+      />
     </AnimatedGroup>
   );
 
@@ -137,6 +142,7 @@ const RopeViewSvg: React.FC = () => {
         {/* Filled path */}
         <AnimatedPath
           animatedProps={fillPath}
+          fill="transparent"
           stroke="dodgerblue"
           strokeWidth={6}
           strokeLinejoin="round"
@@ -145,6 +151,7 @@ const RopeViewSvg: React.FC = () => {
         {/* Dashed stroke */}
         <AnimatedPath
           animatedProps={strokePath}
+          fill="transparent"
           stroke="white"
           strokeWidth={2}
           strokeLinejoin="round"

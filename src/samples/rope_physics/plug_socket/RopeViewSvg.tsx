@@ -227,6 +227,7 @@ const RopeViewSvg: React.FC<RopeProps> = ({
       <AnimatedCircle
         animatedProps={plugStrokeAnimProps}
         r={PLUG_RADIUS}
+        fill="transparent"
         strokeWidth={4}
       />
     </AnimatedGroup>
@@ -242,6 +243,7 @@ const RopeViewSvg: React.FC<RopeProps> = ({
         {/* Filled path */}
         <AnimatedPath
           animatedProps={fillPath}
+          fill="transparent"
           strokeWidth={6}
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -249,6 +251,7 @@ const RopeViewSvg: React.FC<RopeProps> = ({
         {/* Dashed stroke */}
         <AnimatedPath
           animatedProps={strokePath}
+          fill="transparent"
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="round"

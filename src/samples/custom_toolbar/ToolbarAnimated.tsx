@@ -205,7 +205,7 @@ const ToolbarMacos = () => {
 
   const onTouchMove = useCallback(
     (e: GestureResponderEvent) => {
-      longPressTimeout.current && clearTimeout(longPressTimeout.current);
+      // longPressTimeout.current && clearTimeout(longPressTimeout.current);
       if (isLongPressed) {
         isLongPressed &&
           activeY.setValue(e.nativeEvent.pageY - listViewOffset.current);
