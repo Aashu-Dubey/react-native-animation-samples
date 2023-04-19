@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
   RoundedRect,
@@ -8,7 +8,6 @@ import {
   useTouchHandler,
   useValue,
   vec,
-  SkPoint,
   dist,
   interpolate,
   Extrapolate,
@@ -23,24 +22,23 @@ import {
 } from 'react-native-safe-area-context';
 import { BackButton } from '../../components';
 import { APP_ICONS } from './icons';
-import { BoxSkiaProps } from './types';
+import { BoxSkiaProps, TouchType } from './types';
 
-const COL = 12;
-const ROW = 22;
+const boxSize = 20 + 12; // 12 = padding
 const RADIUS = 130;
 
-const Box: React.FC<BoxSkiaProps> = ({
-  icon,
-  smallWidth,
-  smallHeight,
-  index,
-  touchPos,
-}) => {
-  const row = Math.trunc(index / COL);
-  const col = index % COL;
-  const posX = col * smallWidth;
-  const posY = row * smallHeight;
-  const origin = vec(posX + smallWidth / 2, posY + smallHeight / 2);
+const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
+  const position = useComputedValue(() => {
+    const row = Math.trunc(index / totalCol);
+    const col = index % totalCol;
+    return { x: col * boxSize, y: row * boxSize };
+  }, [totalCol]);
+
+  const origin = useComputedValue(
+    () =>
+      vec(position.current.x + boxSize / 2, position.current.y + boxSize / 2),
+    [position],
+  );
 
   /* const itemScale = useValue(1);
   const translateH = useValue(0);
@@ -49,8 +47,8 @@ const Box: React.FC<BoxSkiaProps> = ({
   const image = useImage(icon);
 
   const distance = useComputedValue(
-    () => (touchPos.current ? dist(touchPos.current, origin) : 0),
-    [touchPos],
+    () => (touchPos.current ? dist(touchPos.current, origin.current) : 0),
+    [touchPos, origin],
   );
 
   const translate = useComputedValue(() => {
@@ -61,19 +59,23 @@ const Box: React.FC<BoxSkiaProps> = ({
       // that value with this median (correct name?) will distribute items to a distance, basically forming a Circle.
       const median = (distance.current - RADIUS) / RADIUS;
 
-      translateX = (touchPos.current.x - origin.x) * median;
-      translateY = (touchPos.current.y - origin.y) * median;
+      translateX = (touchPos.current.x - origin.current.x) * median;
+      translateY = (touchPos.current.y - origin.current.y) * median;
 
       // Clamp the translate value to the touch point if it is getting past that.
-      if (Math.abs(translateX) > Math.abs(touchPos.current.x - origin.x)) {
-        translateX = touchPos.current.x - origin.x;
+      if (
+        Math.abs(translateX) > Math.abs(touchPos.current.x - origin.current.x)
+      ) {
+        translateX = touchPos.current.x - origin.current.x;
       }
-      if (Math.abs(translateY) > Math.abs(touchPos.current.y - origin.y)) {
-        translateY = touchPos.current.y - origin.y;
+      if (
+        Math.abs(translateY) > Math.abs(touchPos.current.y - origin.current.y)
+      ) {
+        translateY = touchPos.current.y - origin.current.y;
       }
     }
     return { x: translateX, y: translateY };
-  }, [touchPos]);
+  }, [touchPos, origin]);
 
   const scale = useComputedValue(() => {
     // Currently setting the scaling hard coded (3, 2, 1) and it seems to be working fine for different radius.
@@ -87,14 +89,27 @@ const Box: React.FC<BoxSkiaProps> = ({
         extrapolateRight: Extrapolate.CLAMP,
       },
     );
-  }, [touchPos]);
+  }, [touchPos, origin]);
 
   /* useValueEffect(scale, () => {
-    runSpring(itemScale, scale.current);
+    const isAnimStartOrEnd =
+      touchPos.current?.isFirst || touchPos.current === null;
+    if (isAnimStartOrEnd) {
+      runSpring(itemScale, scale.current, { damping: 20, mass: 0.8 });
+    } else {
+      itemScale.current = scale.current;
+    }
   });
   useValueEffect(translate, () => {
-    runSpring(translateH, translate.current.x);
-    runSpring(translateV, translate.current.y);
+    const isAnimStartOrEnd =
+      touchPos.current?.isFirst || touchPos.current === null;
+    if (isAnimStartOrEnd) {
+      runSpring(translateH, translate.current.x, { damping: 20, mass: 0.8 });
+      runSpring(translateV, translate.current.y, { damping: 20, mass: 0.8 });
+    } else {
+      translateH.current = translate.current.x;
+      translateV.current = translate.current.y;
+    }
   });
 
   const transform = useComputedValue(() => {
@@ -114,10 +129,10 @@ const Box: React.FC<BoxSkiaProps> = ({
 
   const PAD = 6;
   const props = {
-    x: posX + PAD,
-    y: posY + PAD,
-    width: smallWidth - PAD * 2,
-    height: smallHeight - PAD * 2,
+    x: position.current.x + PAD,
+    y: position.current.y + PAD,
+    width: boxSize - PAD * 2,
+    height: boxSize - PAD * 2,
   };
 
   return (
@@ -135,19 +150,47 @@ const GridMagnification: React.FC = () => {
   const window = useWindowDimensions();
   const inset = useSafeAreaInsets();
 
-  const bigWidth = window.width - 16;
-  const bigHeight = window.height - inset.top - inset.bottom - 80;
-  const smallWidth = bigWidth / COL;
-  const smallHeight = bigHeight / ROW;
+  const touchPos = useValue<TouchType | null>(null);
 
-  const touchPos = useValue<SkPoint | null>(null);
+  const [appIcons, setAppIcons] = useState<string[]>([]);
+
+  const gridView = useRef({ width: 0, height: 0 });
+  const totalCol = useRef(0);
+
+  useEffect(() => {
+    const viewWidth = window.width - inset.left - inset.right - 32;
+    const viewHeight = window.height - inset.top - inset.bottom - (32 + 42);
+
+    const maxCol = Math.trunc(viewWidth / boxSize);
+    const maxRow = Math.trunc(viewHeight / boxSize);
+
+    gridView.current = { width: maxCol * boxSize, height: maxRow * boxSize };
+    totalCol.current = maxCol;
+
+    const randomInteger = (min: number, max: number) =>
+      Math.floor(Math.random() * (max - min + 1)) + min;
+
+    setAppIcons(() => {
+      const total = maxCol * maxRow;
+      const icons = [];
+      for (let i = 0; i < total; i++) {
+        const icon =
+          i < APP_ICONS.length
+            ? APP_ICONS[i]
+            : APP_ICONS[randomInteger(0, APP_ICONS.length - 1)];
+        icons.push(icon);
+      }
+
+      return icons;
+    });
+  }, [window, inset]);
 
   const onTouch = useTouchHandler({
     onStart: pt => {
-      touchPos.current = pt;
+      touchPos.current = { ...pt, isFirst: true };
     },
     onActive: pt => {
-      touchPos.current = pt;
+      touchPos.current = { ...pt, isFirst: false };
     },
     onEnd: () => {
       touchPos.current = null;
@@ -157,17 +200,20 @@ const GridMagnification: React.FC = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
       <BackButton style={{ marginTop: 0, marginLeft: 12 }} />
-      <Canvas
-        style={[{ width: bigWidth, height: bigHeight }, styles.container]}
-        onTouch={onTouch}
-      >
-        {APP_ICONS.map((icon, index) => (
-          <Box
-            key={index}
-            {...{ icon, smallWidth, smallHeight, index, touchPos }}
-          />
-        ))}
-      </Canvas>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Canvas
+          style={[{ ...gridView.current }, styles.container]}
+          onTouch={onTouch}
+        >
+          {appIcons.map((icon, index) => (
+            <Box
+              key={index}
+              totalCol={totalCol.current}
+              {...{ icon, index, touchPos }}
+            />
+          ))}
+        </Canvas>
+      </View>
     </SafeAreaView>
   );
 };

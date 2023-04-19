@@ -1,5 +1,5 @@
 // Initial implementation following "https://twitter.com/philipcdavis/status/1549416537789845506"
-import React, { useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, useWindowDimensions, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -14,19 +14,18 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { BackButton } from '../../components';
-import { BoxProps } from './types';
+import { BoxProps, TouchType } from './types';
 
-const COL = 12;
-const ROW = 22;
+const boxSize = 20 + 12; // 12 = padding
 const RADIUS = 80;
 
-const Box = ({ smallWidth, smallHeight, index, touchPos }: BoxProps) => {
-  const row = Math.trunc(index / COL);
-  const col = index % COL;
-  const posX = col * smallWidth + smallWidth / 2;
-  const posY = row * smallHeight + smallHeight / 2;
-
+const Box = ({ totalCol, index, touchPos }: BoxProps) => {
   const viewStyle = useAnimatedStyle(() => {
+    const row = Math.trunc(index / totalCol);
+    const col = index % totalCol;
+    const posX = col * boxSize + boxSize / 2;
+    const posY = row * boxSize + boxSize / 2;
+
     // Getting distance between two points using equation, d=√((x2 – x1)² + (y2 – y1)²)
     const distance = touchPos.value
       ? Math.sqrt(
@@ -53,32 +52,36 @@ const Box = ({ smallWidth, smallHeight, index, touchPos }: BoxProps) => {
       }
     }
 
+    const isAnimStartOrEnd = touchPos.value?.isFirst || touchPos.value === null;
+    const tx = isAnimStartOrEnd
+      ? withSpring(translateX, { damping: 20 })
+      : translateX;
+    const ty = isAnimStartOrEnd
+      ? withSpring(translateY, { damping: 20 })
+      : translateY;
+    const scale = interpolate(
+      distance,
+      [0, 0.01, RADIUS, RADIUS + boxSize],
+      [1, 1.6, 0.6, 0.15],
+      {
+        extrapolateLeft: Extrapolate.CLAMP,
+        extrapolateRight: Extrapolate.CLAMP,
+      },
+    );
+
     return {
       transform: [
-        { translateX: withSpring(translateX, { damping: 20 }) },
-        { translateY: withSpring(translateY, { damping: 20 }) },
+        { translateX: tx },
+        { translateY: ty },
         {
-          scale: withSpring(
-            interpolate(
-              distance,
-              [0, 0.01, RADIUS, RADIUS + (smallWidth + smallHeight) / 2],
-              [1, 1.6, 0.6, 0.15],
-              {
-                extrapolateLeft: Extrapolate.CLAMP,
-                extrapolateRight: Extrapolate.CLAMP,
-              },
-            ),
-            { damping: 20 },
-          ),
+          scale: isAnimStartOrEnd ? withSpring(scale, { damping: 20 }) : scale,
         },
       ],
     };
-  }, []);
+  }, [totalCol]);
 
   return (
-    <Animated.View
-      style={[{ width: smallWidth, height: smallHeight }, viewStyle]}
-    >
+    <Animated.View style={[{ width: boxSize, height: boxSize }, viewStyle]}>
       <View style={styles.boxView} />
     </Animated.View>
   );
@@ -88,62 +91,53 @@ const GridMagnification: React.FC = () => {
   const window = useWindowDimensions();
   const inset = useSafeAreaInsets();
 
-  const touchPos = useSharedValue<{ x: number; y: number } | null>(null);
-  const isGestureActive = useSharedValue(false);
+  const touchPos = useSharedValue<TouchType | null>(null);
 
-  const bigWidth = window.width - 16;
-  const bigHeight = window.height - inset.top - inset.bottom - 80;
+  const gridView = useRef({ width: 0, height: 0 });
+  const totalCol = useRef(0);
 
-  const smallWidth = bigWidth / COL;
-  const smallHeight = bigHeight / ROW;
+  const [items, setItems] = useState<any[]>([]);
 
-  const items = useMemo(() => [...Array(COL * ROW)], []); // Hardcoded total items, 12 columns and 22 rows
+  useEffect(() => {
+    const viewWidth = window.width - inset.left - inset.right - 32;
+    const viewHeight = window.height - inset.top - inset.bottom - (32 + 42);
+
+    const maxCol = Math.trunc(viewWidth / boxSize);
+    const maxRow = Math.trunc(viewHeight / boxSize);
+
+    gridView.current = { width: maxCol * boxSize, height: maxRow * boxSize };
+    totalCol.current = maxCol;
+
+    setItems([...Array(maxCol * maxRow)]);
+  }, [window, inset]);
 
   const dragGesture = Gesture.Pan()
-    .manualActivation(true)
-    .onTouchesMove((_, state) => {
-      isGestureActive.value ? state.activate() : state.fail();
-    })
-    .onStart(e => {
-      touchPos.value = { x: e.x, y: e.y };
+    .onBegin(e => {
+      touchPos.value = { x: e.x, y: e.y, isFirst: true };
     })
     .onUpdate(e => {
-      touchPos.value = { x: e.x, y: e.y };
-    })
-    .onEnd(() => {
-      touchPos.value = null;
+      touchPos.value = { x: e.x, y: e.y, isFirst: false };
     })
     .onFinalize(() => {
-      isGestureActive.value = false;
-    });
-
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(150)
-    .onStart(e => {
-      isGestureActive.value = true;
-      touchPos.value = { x: e.x, y: e.y };
-    })
-    .onEnd(_event => {
       touchPos.value = null;
     });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
       <BackButton style={{ marginTop: 0, marginLeft: 12 }} />
-      <GestureDetector
-        gesture={Gesture.Simultaneous(dragGesture, longPressGesture)}
-      >
-        <View
-          style={[{ width: bigWidth, height: bigHeight }, styles.container]}
-        >
-          {items.map((_, index) => (
-            <Box
-              key={index}
-              {...{ smallWidth, smallHeight, index, touchPos }}
-            />
-          ))}
-        </View>
-      </GestureDetector>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <GestureDetector gesture={dragGesture}>
+          <View style={[{ ...gridView.current }, styles.container]}>
+            {items.map((_, index) => (
+              <Box
+                key={index}
+                totalCol={totalCol.current}
+                {...{ index, touchPos }}
+              />
+            ))}
+          </View>
+        </GestureDetector>
+      </View>
     </SafeAreaView>
   );
 };

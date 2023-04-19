@@ -16,6 +16,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Config from '../../Config';
 import { DEMOS } from '../../models/demo';
@@ -32,11 +33,15 @@ const ListItem: React.FC<ListItemProps> = ({ data, isGrid }) => {
   const navigation = useNavigation<any>();
   const isDarkMode = useColorScheme() === 'dark';
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const translateY = useSharedValue(50);
   const opacity = useSharedValue(0);
 
-  const itemWidth = isGrid ? (width - 36) / 2 : width - 24;
+  const widthWithoutInset = width - insets.left - insets.right;
+  const itemWidth = isGrid
+    ? (widthWithoutInset - 36) / 2
+    : widthWithoutInset - 24;
 
   useEffect(() => {
     const easing = Easing.bezier(0.4, 0.0, 0.2, 1.0);

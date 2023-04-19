@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -14,25 +14,18 @@ import {
 } from 'react-native-safe-area-context';
 import { BackButton } from '../../components';
 import { APP_ICONS } from './icons';
-import { BoxProps } from './types';
+import { BoxProps, TouchType } from './types';
 
-const COL = 12;
-const ROW = 22;
+const boxSize = 20 + 12; // 12 = padding
 const RADIUS = 130;
 
-const Box: React.FC<BoxProps> = ({
-  icon,
-  smallWidth,
-  smallHeight,
-  index,
-  touchPos,
-}) => {
-  const row = Math.trunc(index / COL);
-  const col = index % COL;
-  const posX = col * smallWidth + smallWidth / 2;
-  const posY = row * smallHeight + smallHeight / 2;
-
+const Box: React.FC<BoxProps> = ({ totalCol, icon, index, touchPos }) => {
   const viewStyle = useAnimatedStyle(() => {
+    const row = Math.trunc(index / totalCol);
+    const col = index % totalCol;
+    const posX = col * boxSize + boxSize / 2;
+    const posY = row * boxSize + boxSize / 2;
+
     // Getting distance between two points using equation, d=√((x2 – x1)² + (y2 – y1)²)
     const distance = touchPos.value
       ? Math.sqrt(
@@ -62,38 +55,44 @@ const Box: React.FC<BoxProps> = ({
       }
     }
 
+    const isAnimStartOrEnd = touchPos.value?.isFirst || touchPos.value === null;
+    const tx = isAnimStartOrEnd
+      ? withSpring(translateX, { damping: 20, mass: 0.8 })
+      : translateX;
+    const ty = isAnimStartOrEnd
+      ? withSpring(translateY, { damping: 20, mass: 0.8 })
+      : translateY;
+    const scale = interpolate(
+      distance,
+      [0, 0.01, RADIUS / 3, RADIUS / 2, RADIUS],
+      [1, 3, 2, 1, 0.15],
+      {
+        extrapolateLeft: Extrapolate.CLAMP,
+        extrapolateRight: Extrapolate.CLAMP,
+      },
+    );
+
     return {
       zIndex: distance <= RADIUS ? 99 : 9, // just so scaled down items don't show above bigger ones
       transform: [
-        { translateX: withSpring(translateX, { damping: 20, mass: 0.8 }) },
-        { translateY: withSpring(translateY, { damping: 20, mass: 0.8 }) },
+        { translateX: tx },
+        { translateY: ty },
         // Currently setting the scaling hard coded (3, 2, 1) and it seems to be working fine for different radius.
         // Make it dynamic?
         {
-          scale: withSpring(
-            interpolate(
-              distance,
-              [0, 0.01, RADIUS / 3, RADIUS / 2, RADIUS],
-              [1, 3, 2, 1, 0.15],
-              {
-                extrapolateLeft: Extrapolate.CLAMP,
-                extrapolateRight: Extrapolate.CLAMP,
-              },
-            ),
-            { damping: 20, mass: 0.8 },
-          ),
+          scale: isAnimStartOrEnd
+            ? withSpring(scale, { damping: 20, mass: 0.8 })
+            : scale,
         },
       ],
     };
-  }, []);
+  }, [totalCol]);
 
   return (
-    <Animated.View
-      style={[{ width: smallWidth, height: smallHeight }, viewStyle]}
-    >
+    <Animated.View style={[{ width: boxSize, height: boxSize }, viewStyle]}>
       <View style={styles.boxView}>
         <Image
-          style={{ width: smallWidth - 12, height: smallHeight - 12 }}
+          style={{ width: boxSize - 12, height: boxSize - 12 }}
           source={{ uri: icon }}
         />
       </View>
@@ -105,81 +104,68 @@ const GridMagnification: React.FC = () => {
   const window = useWindowDimensions();
   const inset = useSafeAreaInsets();
 
-  const touchPos = useSharedValue<{ x: number; y: number } | null>(null);
-  const isGestureActive = useSharedValue(false);
+  const touchPos = useSharedValue<TouchType | null>(null);
 
   const [appIcons, setAppIcons] = useState<string[]>([]);
 
-  const bigWidth = window.width - 16;
-  const bigHeight = window.height - inset.top - inset.bottom - 80;
-
-  const smallWidth = bigWidth / COL;
-  const smallHeight = bigHeight / ROW;
+  const gridView = useRef({ width: 0, height: 0 });
+  const totalCol = useRef(0);
 
   useEffect(() => {
-    /* const randomInteger = (min: number, max: number) =>
-      Math.floor(Math.random() * (max - min + 1)) + min; */
+    const viewWidth = window.width - inset.left - inset.right - 32;
+    const viewHeight = window.height - inset.top - inset.bottom - (32 + 42);
 
-    /* setAppIcons(cIcons => {
-      if (cIcons.length > 0) {
-        return cIcons;
-      }
-      const total = COL * ROW;
+    const maxCol = Math.trunc(viewWidth / boxSize);
+    const maxRow = Math.trunc(viewHeight / boxSize);
+
+    gridView.current = { width: maxCol * boxSize, height: maxRow * boxSize };
+    totalCol.current = maxCol;
+
+    const randomInteger = (min: number, max: number) =>
+      Math.floor(Math.random() * (max - min + 1)) + min;
+
+    setAppIcons(() => {
+      const total = maxCol * maxRow;
       const icons = [];
       for (let i = 0; i < total; i++) {
-        // icons.push(APP_ICONS[randomInteger(0, APP_ICONS.length - 1)]);
-        icons.push(APP_ICONS[i]);
+        const icon =
+          i < APP_ICONS.length
+            ? APP_ICONS[i]
+            : APP_ICONS[randomInteger(0, APP_ICONS.length - 1)];
+        icons.push(icon);
       }
+
       return icons;
-    }); */
-    setAppIcons([...APP_ICONS]);
-  }, []);
+    });
+  }, [window, inset]);
 
   const dragGesture = Gesture.Pan()
-    .manualActivation(true)
-    .onTouchesMove((_, state) => {
-      isGestureActive.value ? state.activate() : state.fail();
-    })
-    .onStart(e => {
-      touchPos.value = { x: e.x, y: e.y };
+    .onBegin(e => {
+      touchPos.value = { x: e.x, y: e.y, isFirst: true };
     })
     .onUpdate(e => {
-      touchPos.value = { x: e.x, y: e.y };
-    })
-    .onEnd(() => {
-      touchPos.value = null;
+      touchPos.value = { x: e.x, y: e.y, isFirst: false };
     })
     .onFinalize(() => {
-      isGestureActive.value = false;
-    });
-
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(150)
-    .onStart(e => {
-      isGestureActive.value = true;
-      touchPos.value = { x: e.x, y: e.y };
-    })
-    .onEnd(_event => {
       touchPos.value = null;
     });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
       <BackButton style={{ marginTop: 0, marginLeft: 12 }} />
-      <GestureDetector
-        gesture={Gesture.Simultaneous(dragGesture, longPressGesture)}
-      >
-        <View
-          style={[{ width: bigWidth, height: bigHeight }, styles.container]}
-        >
-          {appIcons.map((icon, index) => (
-            <Box
-              key={index}
-              {...{ icon, smallWidth, smallHeight, index, touchPos }}
-            />
-          ))}
-        </View>
-      </GestureDetector>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <GestureDetector gesture={dragGesture}>
+          <View style={[{ ...gridView.current }, styles.container]}>
+            {appIcons.map((icon, index) => (
+              <Box
+                key={index}
+                totalCol={totalCol.current}
+                {...{ icon, index, touchPos }}
+              />
+            ))}
+          </View>
+        </GestureDetector>
+      </View>
     </SafeAreaView>
   );
 };
