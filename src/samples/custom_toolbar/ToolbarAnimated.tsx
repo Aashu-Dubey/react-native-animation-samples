@@ -24,7 +24,7 @@ import Config from '../../Config';
 import * as theme from '../../theme';
 
 interface ButtonType {
-  item: typeof BUTTONS_LIST[0];
+  item: (typeof BUTTONS_LIST)[0];
   index: number;
   offset: Animated.Value;
   activeY: Animated.Value;
@@ -187,7 +187,7 @@ const ToolbarMacos = () => {
 
   const listRef = useRef<View | null>(null);
   const listViewOffset = useRef<number>(0);
-  const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimeout = useRef<number | null>(null);
 
   const activeY = useRef(new Animated.Value(0)).current;
   const scrollOffset = useRef(new Animated.Value(0)).current;

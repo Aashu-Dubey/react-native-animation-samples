@@ -25,7 +25,7 @@ import Config from '../../Config';
 import * as theme from '../../theme';
 
 interface ButtonType {
-  item: typeof BUTTONS_LIST[0];
+  item: (typeof BUTTONS_LIST)[0];
   index: number;
   activeY: SharedValue<number>;
   offset: SharedValue<number>;

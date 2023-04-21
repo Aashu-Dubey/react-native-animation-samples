@@ -23,7 +23,7 @@ import { DEMOS } from '../../models/demo';
 import * as theme from '../../theme';
 
 interface ListItemProps {
-  data: ListRenderItemInfo<typeof DEMOS[0]>;
+  data: ListRenderItemInfo<(typeof DEMOS)[0]>;
   isGrid: boolean;
 }
 
