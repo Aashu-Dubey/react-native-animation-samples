@@ -9,3 +9,4 @@ export default () => (
 export { default as GridMagnification } from './GridMagnification';
 export { default as GridMagnificationInitial } from './GridMagnificationInitial';
 export { default as GridMagnificationSkia } from './GridMagnificationSkia';
+export { default as GridMagnifySkiaWithSelector } from './GridMagnifySkiaWithSelector';

@@ -70,10 +70,17 @@ export const GRID_MAGNIFICATION: ListType[] = [
     screenName: 'grid_magnification',
   },
   {
-    name: 'Grid Magnification: Skia (WIP)',
+    name: 'Grid Magnification: Skia',
     description: 'Same implementation using RN-Skia provided APIs.',
     background: AppImages.grid_magnification,
     screenName: 'grid_magnification_skia',
+  },
+  {
+    name: 'Grid Magnification: Skia with Selectors',
+    description:
+      'Using RN-Skia with a more recommended approach with cobination of computedValues & Selectors',
+    background: AppImages.grid_magnification,
+    screenName: 'grid_magnify_skia_with_selectors',
   },
 ];
 

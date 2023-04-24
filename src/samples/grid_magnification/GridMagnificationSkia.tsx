@@ -13,8 +13,9 @@ import {
   Extrapolate,
   useComputedValue,
   ImageShader,
-  // runSpring,
-  // useValueEffect,
+  runSpring,
+  useValueEffect,
+  processTransform2d,
 } from '@shopify/react-native-skia';
 import {
   SafeAreaView,
@@ -40,9 +41,9 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
     [position],
   );
 
-  /* const itemScale = useValue(1);
+  const itemScale = useValue(1);
   const translateH = useValue(0);
-  const translateV = useValue(0); */
+  const translateV = useValue(0);
 
   const image = useImage(icon);
 
@@ -75,7 +76,7 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
       }
     }
     return { x: translateX, y: translateY };
-  }, [touchPos, origin]);
+  }, [touchPos, distance, origin]);
 
   const scale = useComputedValue(() => {
     // Currently setting the scaling hard coded (3, 2, 1) and it seems to be working fine for different radius.
@@ -89,9 +90,9 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
         extrapolateRight: Extrapolate.CLAMP,
       },
     );
-  }, [touchPos, origin]);
+  }, [distance]);
 
-  /* useValueEffect(scale, () => {
+  useValueEffect(scale, () => {
     const isAnimStartOrEnd =
       touchPos.current?.isFirst || touchPos.current === null;
     if (isAnimStartOrEnd) {
@@ -112,20 +113,30 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
     }
   });
 
-  const transform = useComputedValue(() => {
+  // With Spring effect
+  /* const transform = useComputedValue(() => {
     return [
       { translateX: translateH.current },
       { translateY: translateV.current },
       { scale: itemScale.current },
     ];
   }, [itemScale, translateH, translateV]); */
-  const transform = useComputedValue(() => {
+  const matrix = useComputedValue(() => {
+    return processTransform2d([
+      { translateX: translateH.current },
+      { translateY: translateV.current },
+      { scale: itemScale.current },
+    ]);
+  }, [itemScale, translateH, translateV]);
+
+  // Without Spring effect
+  /* const transform = useComputedValue(() => {
     return [
       { translateX: translate.current.x },
       { translateY: translate.current.y },
       { scale: scale.current },
     ];
-  }, [scale, translate]);
+  }, [scale, translate]); */
 
   const PAD = 6;
   const props = {
@@ -136,7 +147,7 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
   };
 
   return (
-    <Group transform={transform} origin={origin}>
+    <Group /* transform={transform} */ matrix={matrix} origin={origin}>
       {image && (
         <RoundedRect {...props} r={6}>
           <ImageShader image={image} fit="cover" rect={props} />

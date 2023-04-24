@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Animated, {
+  createAnimatedPropAdapter,
   interpolateColor,
+  processColor,
   runOnJS,
   SharedValue,
   useAnimatedProps,
@@ -36,6 +38,20 @@ type RopeColors = {
   plug: string;
   plugStroke: string;
 };
+
+// rn-svg: after v13.x.x to use 'fill' or 'stroke' with 'useAnimatedProps' we need to pass this adapter as argument
+// ref: https://github.com/software-mansion/react-native-svg/issues/1845#issuecomment-1247836723
+const animatedPropAdapter = createAnimatedPropAdapter(
+  (props: any) => {
+    if (Object.keys(props).includes('fill')) {
+      props.fill = { type: 0, payload: processColor(props.fill) };
+    }
+    if (Object.keys(props).includes('stroke')) {
+      props.stroke = { type: 0, payload: processColor(props.stroke) };
+    }
+  },
+  ['fill', 'stroke'],
+);
 
 // Here we position a RN view above the SVG view (Plug), to control the component's gestures.
 const GestureHandler: React.FC<GestureHandlerProps> = ({
@@ -180,13 +196,21 @@ const RopeViewSvg: React.FC<RopeProps> = ({
 
   const plug2AnimatedProps = useAnimatedProps(() => ({ ...plug2.value }));
 
-  const plugAnimProps = useAnimatedProps(() => ({
-    fill: colorsUtil.value.plug,
-  }));
+  const plugAnimProps = useAnimatedProps(
+    () => ({
+      fill: colorsUtil.value.plug,
+    }),
+    [colorsUtil],
+    animatedPropAdapter,
+  );
 
-  const plugStrokeAnimProps = useAnimatedProps(() => ({
-    stroke: colorsUtil.value.plugStroke,
-  }));
+  const plugStrokeAnimProps = useAnimatedProps(
+    () => ({
+      stroke: colorsUtil.value.plugStroke,
+    }),
+    [colorsUtil],
+    animatedPropAdapter,
+  );
 
   // Calculates new spring position
   const updatePath = () => {
@@ -208,18 +232,22 @@ const RopeViewSvg: React.FC<RopeProps> = ({
     return `M${plug1.value.x} ${plug1.value.y} Q${quadPos.value.x},${quadPos.value.y} ${plug2.value.x},${plug2.value.y}`;
   }, [plug1, plug2, updatePath]);
 
-  const fillPath = useAnimatedProps(() => {
-    return { d: path.value, stroke: colorsUtil.value.rope };
-  }, [path]);
+  const fillPath = useAnimatedProps(
+    () => ({ d: path.value, stroke: colorsUtil.value.rope }),
+    [path, colorsUtil],
+    animatedPropAdapter,
+  );
 
-  const strokePath = useAnimatedProps(() => {
-    return {
+  const strokePath = useAnimatedProps(
+    () => ({
       d: path.value,
       stroke: colorsUtil.value.dash,
       strokeDashoffset:
         ((Date.now() - initialTime.current) / 1000) * -loop.value,
-    };
-  }, [path, loop]);
+    }),
+    [path, colorsUtil, loop],
+    animatedPropAdapter,
+  );
 
   const renderPlug = (animatedProps: Animated.AnimateProps<GProps>) => (
     <AnimatedGroup {...{ animatedProps }}>

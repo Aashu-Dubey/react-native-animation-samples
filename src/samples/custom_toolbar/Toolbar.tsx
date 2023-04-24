@@ -137,16 +137,9 @@ const Toolbar = () => {
   const activeY = useSharedValue(0);
   // Contains list scroll offset from top. In (-) when user scroll past the top on iOS (important to activate Rubberbanding effect).
   const scrollOffset = useSharedValue(0);
-  // This activates Pan Gesture only after long press, avoiding conflict with scrolling.
-  const isGestureActive = useSharedValue(false);
 
-  // Activating gestures only when any of the items is active (after long press)
-  // Ref:- "https://github.com/software-mansion/react-native-gesture-handler/issues/1933"
   const dragGesture = Gesture.Pan()
-    .manualActivation(true)
-    .onTouchesMove((_, state) => {
-      isGestureActive.value ? state.activate() : state.fail();
-    })
+    .activateAfterLongPress(200)
     .onStart(_e => {
       activeY.value = _e.y;
     })
@@ -154,19 +147,6 @@ const Toolbar = () => {
       activeY.value = e.y;
     })
     .onEnd(() => {
-      activeY.value = 0;
-    })
-    .onFinalize(() => {
-      isGestureActive.value = false;
-    });
-
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(200)
-    .onStart(_event => {
-      isGestureActive.value = true;
-      activeY.value = _event.y;
-    })
-    .onEnd(_event => {
       activeY.value = 0;
     });
 
@@ -187,9 +167,7 @@ const Toolbar = () => {
           <View
             style={[styles.toolbarView, themeStyles(isDarkMode).toolbarView]}
           />
-          <GestureDetector
-            gesture={Gesture.Simultaneous(dragGesture, longPressGesture)}
-          >
+          <GestureDetector gesture={dragGesture}>
             <Animated.FlatList
               style={styles.buttonListView}
               contentContainerStyle={{ padding: 8 }}

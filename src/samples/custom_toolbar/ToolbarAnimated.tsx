@@ -6,7 +6,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  SafeAreaView,
   View,
   Animated,
   StyleSheet,
@@ -16,6 +15,10 @@ import {
   StatusBar,
   useColorScheme,
 } from 'react-native';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { SFSymbol } from 'react-native-sfsymbols';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { BUTTONS_LIST } from './buttons';
@@ -182,6 +185,7 @@ const Button: React.FC<ButtonType> = ({ item, index, offset, activeY }) => {
 
 const ToolbarMacos = () => {
   const isDarkMode = useColorScheme() === 'dark';
+  const insets = useSafeAreaInsets();
 
   const [isLongPressed, setLongPressed] = useState(false);
 
@@ -262,7 +266,8 @@ const ToolbarMacos = () => {
             onTouchCancel={onTouchEnd}
             onLayout={() =>
               listRef.current?.measure((_x, _y, _w, _h, _pageX, pageY) => {
-                listViewOffset.current = pageY;
+                // Adding the top inset, as layout measure doesn't consider the safe area in offset
+                listViewOffset.current = pageY + insets.top;
               })
             }
             ref={listRef}
