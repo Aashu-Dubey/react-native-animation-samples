@@ -47,18 +47,16 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
 
   const image = useImage(icon);
 
-  const distance = useComputedValue(
-    () => (touchPos.current ? dist(touchPos.current, origin.current) : 0),
-    [touchPos, origin],
-  );
-
-  const translate = useComputedValue(() => {
+  const transform = useComputedValue(() => {
     let translateX = 0,
       translateY = 0;
+    let distance = 0;
+
     if (touchPos.current) {
+      distance = touchPos.current ? dist(touchPos.current, origin.current) : 0;
       // Here 'touchPos.value.(x/y) - pos(X/Y)' will translate a particular item to the touch point, then multiplying
       // that value with this median (correct name?) will distribute items to a distance, basically forming a Circle.
-      const median = (distance.current - RADIUS) / RADIUS;
+      const median = (distance - RADIUS) / RADIUS;
 
       translateX = (touchPos.current.x - origin.current.x) * median;
       translateY = (touchPos.current.y - origin.current.y) * median;
@@ -75,14 +73,11 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
         translateY = touchPos.current.y - origin.current.y;
       }
     }
-    return { x: translateX, y: translateY };
-  }, [touchPos, distance, origin]);
 
-  const scale = useComputedValue(() => {
     // Currently setting the scaling hard coded (3, 2, 1) and it seems to be working fine for different radius.
     // Make it dynamic?
-    return interpolate(
-      distance.current,
+    const scale = interpolate(
+      distance,
       [0, 0.01, RADIUS / 3, RADIUS / 2, RADIUS],
       [1, 3, 2, 1, 0.15],
       {
@@ -90,37 +85,26 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
         extrapolateRight: Extrapolate.CLAMP,
       },
     );
-  }, [distance]);
 
-  useValueEffect(scale, () => {
+    return { x: translateX, y: translateY, scale };
+  }, [touchPos, origin]);
+
+  useValueEffect(transform, () => {
     const isAnimStartOrEnd =
       touchPos.current?.isFirst || touchPos.current === null;
+
     if (isAnimStartOrEnd) {
-      runSpring(itemScale, scale.current, { damping: 20, mass: 0.8 });
+      runSpring(translateH, transform.current.x, { damping: 20, mass: 0.8 });
+      runSpring(translateV, transform.current.y, { damping: 20, mass: 0.8 });
+      runSpring(itemScale, transform.current.scale, { damping: 20, mass: 0.8 });
     } else {
-      itemScale.current = scale.current;
-    }
-  });
-  useValueEffect(translate, () => {
-    const isAnimStartOrEnd =
-      touchPos.current?.isFirst || touchPos.current === null;
-    if (isAnimStartOrEnd) {
-      runSpring(translateH, translate.current.x, { damping: 20, mass: 0.8 });
-      runSpring(translateV, translate.current.y, { damping: 20, mass: 0.8 });
-    } else {
-      translateH.current = translate.current.x;
-      translateV.current = translate.current.y;
+      translateH.current = transform.current.x;
+      translateV.current = transform.current.y;
+      itemScale.current = transform.current.scale;
     }
   });
 
   // With Spring effect
-  /* const transform = useComputedValue(() => {
-    return [
-      { translateX: translateH.current },
-      { translateY: translateV.current },
-      { scale: itemScale.current },
-    ];
-  }, [itemScale, translateH, translateV]); */
   const matrix = useComputedValue(() => {
     return processTransform2d([
       { translateX: translateH.current },
@@ -128,15 +112,6 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
       { scale: itemScale.current },
     ]);
   }, [itemScale, translateH, translateV]);
-
-  // Without Spring effect
-  /* const transform = useComputedValue(() => {
-    return [
-      { translateX: translate.current.x },
-      { translateY: translate.current.y },
-      { scale: scale.current },
-    ];
-  }, [scale, translate]); */
 
   const PAD = 6;
   const props = {
@@ -147,7 +122,7 @@ const Box: React.FC<BoxSkiaProps> = ({ totalCol, icon, index, touchPos }) => {
   };
 
   return (
-    <Group /* transform={transform} */ matrix={matrix} origin={origin}>
+    <Group matrix={matrix} origin={origin}>
       {image && (
         <RoundedRect {...props} r={6}>
           <ImageShader image={image} fit="cover" rect={props} />
@@ -234,13 +209,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignSelf: 'center',
-  },
-  boxView: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 6,
-    margin: 6,
-    overflow: 'hidden',
   },
 });
 

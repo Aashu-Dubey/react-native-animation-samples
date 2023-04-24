@@ -47,11 +47,11 @@ const ListItem: React.FC<ListItemProps> = ({ data, isGrid }) => {
     const easing = Easing.bezier(0.4, 0.0, 0.2, 1.0);
 
     translateY.value = withDelay(
-      index * (1000 / 3),
+      index * 200,
       withTiming(0, { duration: 1000, easing }),
     );
     opacity.value = withDelay(
-      index * (1000 / 3),
+      index * 200,
       withTiming(1, { duration: 1000, easing }),
     );
   }, [index, translateY, opacity]);
