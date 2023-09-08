@@ -15,6 +15,7 @@ import GridMagSamples, {
 } from './samples/grid_magnification';
 import { RopePhysics, RopeViewSkia, RopeViewSvg } from './samples/rope_physics';
 import { PlugSocketsView } from './samples/rope_physics/plug_socket';
+import CustomCaret from './samples/custom_caret/CustomCaret';
 
 const Stack = createNativeStackNavigator();
 
@@ -65,6 +66,7 @@ const AppNavigator = () => {
           <Stack.Screen name="rope-svg" component={RopeViewSvg} />
           <Stack.Screen name="rope-sockets-demo" component={PlugSocketsView} />
         </Stack.Group>
+        <Stack.Screen name="custom_caret" component={CustomCaret} />
       </Stack.Group>
     </Stack.Navigator>
   );

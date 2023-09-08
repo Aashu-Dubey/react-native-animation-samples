@@ -36,6 +36,13 @@ export const DEMOS: ListType[] = [
     background: AppImages.rope_skia,
     screenName: 'rope_physics',
   },
+  {
+    name: 'Custom Cursor/Caret',
+    description:
+      'A Customizable custom cursor/caret for TextFields, with intuitive validation animations for max length and password strength.',
+    background: AppImages.custom_caret,
+    screenName: 'custom_caret',
+  },
 ];
 
 export const TOOLBAR: ListType[] = [
