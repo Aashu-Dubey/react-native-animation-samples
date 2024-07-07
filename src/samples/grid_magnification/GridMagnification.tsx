@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  Extrapolate,
+  Extrapolation,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
@@ -67,8 +67,8 @@ const Box: React.FC<BoxProps> = ({ totalCol, icon, index, touchPos }) => {
       [0, 0.01, RADIUS / 3, RADIUS / 2, RADIUS],
       [1, 3, 2, 1, 0.15],
       {
-        extrapolateLeft: Extrapolate.CLAMP,
-        extrapolateRight: Extrapolate.CLAMP,
+        extrapolateLeft: Extrapolation.CLAMP,
+        extrapolateRight: Extrapolation.CLAMP,
       },
     );
 

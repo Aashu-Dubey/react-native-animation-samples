@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   StatusBar,
   StyleSheet,
@@ -9,23 +9,23 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Canvas,
-  useValue,
-  useComputedValue,
   Skia,
   Path,
   StrokeJoin,
   StrokeCap,
-  useLoop,
   Circle,
-  SkiaMutableValue,
-  useSharedValueEffect,
   Group,
   BlurMask,
-  // useClockValue,
 } from '@shopify/react-native-skia';
 import Animated, {
+  cancelAnimation,
+  runOnJS,
+  SharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
+  withRepeat,
+  withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { BackButton } from '../../components';
@@ -36,26 +36,14 @@ const PLUG_RADIUS = 20;
 const PLUG_SIZE = PLUG_RADIUS * 2;
 
 interface GestureHandlerProps {
-  point: SkiaMutableValue<Point>;
+  point: SharedValue<Point>;
 }
 
 // Here we position a RN view above the Skia view (Plug), to control the component's gestures.
 const GestureHandler: React.FC<GestureHandlerProps> = ({ point }) => {
-  const posX = useSharedValue<number>(point.current.x);
-  const posY = useSharedValue<number>(point.current.y);
-
   const panGesture = Gesture.Pan().onChange(e => {
-    posX.value = e.absoluteX;
-    posY.value = e.absoluteY;
+    point.value = { x: e.absoluteX, y: e.absoluteY };
   });
-
-  useSharedValueEffect(
-    () => {
-      point.current = { x: posX.value, y: posY.value };
-    },
-    posX,
-    posY,
-  );
 
   const style = useAnimatedStyle(() => {
     return {
@@ -65,11 +53,11 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({ point }) => {
       transform: [
         { translateX: -PLUG_RADIUS },
         { translateY: -PLUG_RADIUS },
-        { translateX: posX.value },
-        { translateY: posY.value },
+        { translateX: point.value.x },
+        { translateY: point.value.y },
       ],
     };
-  });
+  }, [point]);
 
   return (
     <GestureDetector gesture={panGesture}>
@@ -79,17 +67,17 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({ point }) => {
 };
 
 interface PlugProp {
-  point: SkiaMutableValue<Point>;
+  point: SharedValue<Point>;
 }
 
 // The gesture controllable end points
 const Plug: React.FC<PlugProp> = ({ point }) => {
-  const cx = useValue(point.current.x);
-  const cy = useValue(point.current.y);
+  const cx = useSharedValue(point.value.x);
+  const cy = useSharedValue(point.value.y);
 
-  useComputedValue(() => {
-    cx.current = point.current.x;
-    cy.current = point.current.y;
+  useDerivedValue(() => {
+    cx.value = point.value.x;
+    cy.value = point.value.y;
   }, [point]);
 
   const circleProps = { cx, cy, r: PLUG_RADIUS };
@@ -118,6 +106,7 @@ const createPath = (
   type: 'fill' | 'stroke' | 'shadow',
   dashPhase = 0.1,
 ) => {
+  'worklet';
   const path = Skia.Path.Make();
   path.moveTo(point1.x, point1.y);
   path.quadTo(slackPoint.x, slackPoint.y, point2.x, point2.y);
@@ -131,87 +120,86 @@ const createPath = (
   return path;
 };
 
-// We may not need these initially
-const path = createPath(
-  { x: 56, y: 156 },
-  { x: 356, y: 256 },
-  { x: 56, y: 356 },
-  'fill',
-);
-
-const dashedPath = createPath(
-  { x: 56, y: 56 },
-  { x: 356, y: 156 },
-  { x: 56, y: 356 },
-  'stroke',
-);
-
-const shadowPath = createPath(
-  { x: 56, y: 56 },
-  { x: 356, y: 156 },
-  { x: 56, y: 356 + 50 },
-  'shadow',
-);
-
 const RopeView: React.FC = () => {
   const window = useWindowDimensions();
   const isDarkMode = useColorScheme() === 'dark';
   const inset = useSafeAreaInsets();
 
+  // This create a loop value constantly updating.
   // Used for stroke dashPhase animation and continuous spring calculation. Can also use 'useClock' for this.
-  const loop = useLoop();
-  // const clock = useClockValue();
+  const loop = useSharedValue(50);
+  useEffect(() => {
+    loop.value = withRepeat(withTiming(50), -1, false);
+
+    return () => cancelAnimation(loop);
+  }, [loop]);
+
+  // Plug end point Controllers
+  const plug1 = useSharedValue<Point>({ x: 56, y: 156 });
+  const plug2 = useSharedValue<Point>({ x: 356, y: 256 });
 
   // Current spring point
-  const position = useValue({ x: 0, y: 0 });
-  // Plug end point Controllers
-  const plug1 = useValue<Point>({ x: 56, y: 156 });
-  const plug2 = useValue<Point>({ x: 356, y: 256 });
-  // rope, stroke and shadow path for Rope UI
-  const pathValue = useValue(path);
-  const dashPathValue = useValue(dashedPath);
-  const shadowPathValue = useValue(shadowPath);
+  const position = useSharedValue({ x: 0, y: 0 });
 
   // We calculate time passed since screen initialisation to perform rope stroke animation.
   const initialTime = useRef(Date.now());
 
-  // Here we calculate the spring position based on the end points (Plugs)
-  useComputedValue(() => {
+  // Calculates new spring position
+  const updatePath = () => {
     const midpoint = {
-      x: (plug1.current.x + plug2.current.x) / 2,
-      y: (plug1.current.y + plug2.current.y) / 2,
+      x: (plug1.value.x + plug2.value.x) / 2,
+      y: (plug1.value.y + plug2.value.y) / 2,
     };
-    const slack = slackDecline(plug1.current, plug2.current);
+    const slack = slackDecline(plug1.value, plug2.value);
 
     const anchor = { x: midpoint.x, y: midpoint.y + slack };
-    const newPos = calculateSpringPoint(position.current, anchor, 10, 8, 4);
 
-    if (JSON.stringify(position.current) !== JSON.stringify(newPos)) {
-      pathValue.current = createPath(
-        plug1.current,
-        plug2.current,
-        newPos,
-        'fill',
-      );
-      shadowPathValue.current = createPath(
-        plug1.current,
-        plug2.current,
+    const prevPos = position.value;
+    const newPos = calculateSpringPoint(prevPos, anchor, 10, 8, 4);
+    // This check here is needed to make the callback stop at some points, avoiding infinite callbacks even on no touch
+    if (JSON.stringify(position.value) !== JSON.stringify(newPos)) {
+      position.value = newPos;
+    }
+  };
+
+  const paths = useDerivedValue(() => {
+    runOnJS(updatePath)();
+
+    const newPos = position.value;
+
+    return {
+      pathValue: createPath(plug1.value, plug2.value, newPos, 'fill'),
+      shadowPathValue: createPath(
+        plug1.value,
+        plug2.value,
         { ...newPos, y: newPos.y + 50 },
         'shadow',
-      );
-      position.current = newPos;
-    }
+      ),
+    };
+  }, [plug1, plug2, position, updatePath]);
 
-    // Rope Stroke
-    dashPathValue.current = createPath(
-      plug1.current,
-      plug2.current,
-      newPos,
-      'stroke',
-      ((Date.now() - initialTime.current) / 1000) * -50,
-      // clock.current,
-    );
-  }, [loop /* clock */, plug1, plug2]);
+  // Rope path for Rope UI
+  const pathValue = useDerivedValue(() => paths.value.pathValue, [paths]);
+
+  // Rope Shadow path for Rope UI
+  const shadowPathValue = useDerivedValue(
+    () => paths.value.shadowPathValue,
+    [paths],
+  );
+
+  // Rope Stroke path for Rope UI
+  const dashPathValue = useDerivedValue(
+    () =>
+      createPath(
+        plug1.value,
+        plug2.value,
+        position.value,
+        'stroke',
+        ((Date.now() - initialTime.current) / 1000) * -loop.value,
+      ),
+    // 'paths' isn't used, but needed to keep the dash path in sync with the main one
+    [loop, plug1, plug2, position, paths],
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.rope(isDarkMode).bg }}>

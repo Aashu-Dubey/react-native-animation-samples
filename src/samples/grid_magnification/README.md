@@ -3,13 +3,10 @@
 A grid list view that displays Magnify effect on long press & drag, focusing on the items near the touch area within a radius.
 
 - [GridMagnificationInitial.tsx](./GridMagnificationInitial.tsx):- Initial implementation that I tried replicating this [demo](https://twitter.com/philipcdavis/status/1549416537789845506).
+
 - [GridMagnification.tsx](./GridMagnification.tsx):- Mostly same in logic with the initial one, but here the interaction results in kind of a Bubble Magnifying effect replicating this [demo](https://twitter.com/philipcdavis/status/1549409119131488256), also using static app icons.
 
-### [rn-skia](https://github.com/Shopify/react-native-skia) implementations
-
-- [GridMagnificationSkia.tsx](./GridMagnificationSkia.tsx):- Reimplementing the same using RN-Skia provided components and APIs.
-- [GridMagnifySkiaWithSelectors.tsx](./GridMagnifySkiaWithSelector.tsx):- Using RN-Skia with a more recommended approach with cobination of computedValues & Selectors.
-- [GridMagnifySkiaReanimated.tsx](./GridMagnifySkiaReanimated.tsx): Using RN-Skia with [reanimated](https://github.com/software-mansion/react-native-reanimated) for animations
+- [GridMagnificationSkia.tsx](./GridMagnificationSkia.tsx): Using RN-Skia with [reanimated](https://github.com/software-mansion/react-native-reanimated) for animations
 
 ## 👀 This is how it looks
 
