@@ -78,23 +78,11 @@ export const GRID_MAGNIFICATION: ListType[] = [
   },
   {
     name: 'RN-Skia',
-    description: 'Same implementation using RN-Skia provided APIs.',
+    description:
+      'Same implementation using RN-Skia with reanimated for animations',
     background: AppImages.grid_magnification,
     screenName: 'grid_magnification_skia',
   },
-  {
-    name: 'RN-Skia with Selectors',
-    description:
-      'Using RN-Skia with a more recommended approach with cobination of computedValues & Selectors',
-    background: AppImages.grid_magnification,
-    screenName: 'grid_magnify_skia_with_selectors',
-  },
-  /* {
-    name: 'RN-Skia with Reanimated',
-    description: 'Using RN-Skia with reanimated for animations',
-    background: AppImages.grid_magnification,
-    screenName: 'grid_magnify_skia_reanimated',
-  }, */
 ];
 
 export const ROPE_PHYSICS_DEMOS: ListType[] = [

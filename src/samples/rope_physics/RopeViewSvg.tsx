@@ -15,6 +15,7 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  AnimatedProps,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { G, Path, Circle, GProps } from 'react-native-svg';
@@ -116,7 +117,7 @@ const RopeViewSvg: React.FC = () => {
     };
   }, [path, loop]);
 
-  const renderPlug = (animatedProps: Animated.AnimateProps<GProps>) => (
+  const renderPlug = (animatedProps: AnimatedProps<GProps>) => (
     <AnimatedGroup animatedProps={animatedProps}>
       <Circle r={PLUG_RADIUS} fill="dodgerblue" />
       <Circle

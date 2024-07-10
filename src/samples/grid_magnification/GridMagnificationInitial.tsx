@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, useWindowDimensions, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  Extrapolate,
+  Extrapolation,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
@@ -64,8 +64,8 @@ const Box = ({ totalCol, index, touchPos }: BoxProps) => {
       [0, 0.01, RADIUS, RADIUS + boxSize],
       [1, 1.6, 0.6, 0.15],
       {
-        extrapolateLeft: Extrapolate.CLAMP,
-        extrapolateRight: Extrapolate.CLAMP,
+        extrapolateLeft: Extrapolation.CLAMP,
+        extrapolateRight: Extrapolation.CLAMP,
       },
     );
 

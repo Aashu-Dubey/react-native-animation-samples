@@ -4,6 +4,7 @@ export const SLACK_LENGTH = 400;
 
 /** The decline distance between the mid and spring point vertically */
 export const slackDecline = (point1: Point, point2: Point) => {
+  'worklet';
   const distance =
     SLACK_LENGTH -
     Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
@@ -33,6 +34,7 @@ export const calculateSpringPoint = (
   mass: number,
   damping: number,
 ) => {
+  'worklet';
   /* Spring stiffness, in kg / s^2 */
   let k = -stiffness;
 

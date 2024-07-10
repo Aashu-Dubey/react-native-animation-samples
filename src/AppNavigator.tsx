@@ -10,8 +10,6 @@ import GridMagSamples, {
   GridMagnification,
   GridMagnificationInitial,
   GridMagnificationSkia,
-  GridMagnifySkiaReanimated,
-  GridMagnifySkiaWithSelector,
 } from './samples/grid_magnification';
 import { RopePhysics, RopeViewSkia, RopeViewSvg } from './samples/rope_physics';
 import { PlugSocketsView } from './samples/rope_physics/plug_socket';
@@ -49,14 +47,6 @@ const AppNavigator = () => {
           <Stack.Screen
             name="grid_magnification_skia"
             component={GridMagnificationSkia}
-          />
-          <Stack.Screen
-            name="grid_magnify_skia_with_selectors"
-            component={GridMagnifySkiaWithSelector}
-          />
-          <Stack.Screen
-            name="grid_magnify_skia_reanimated"
-            component={GridMagnifySkiaReanimated}
           />
         </Stack.Group>
 

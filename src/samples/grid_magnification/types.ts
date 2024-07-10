@@ -1,8 +1,4 @@
-import {
-  SkPoint,
-  SkiaMutableValue,
-  SkiaValue,
-} from '@shopify/react-native-skia';
+import { SkPoint } from '@shopify/react-native-skia';
 import { SharedValue } from 'react-native-reanimated';
 
 interface Props {
@@ -17,22 +13,12 @@ export interface BoxProps extends Props {
   touchPos: SharedValue<TouchType | null>;
 }
 
-export interface BoxSkiaProps extends Props {
-  totalCol: number;
-  touchPos: SkiaMutableValue<TouchType | null>;
-}
-
 type BoxValues = {
   x: number;
   y: number;
   origin: SkPoint;
   transform: { translateX: number; translateY: number; scale: number };
 };
-
-export interface BoxSkiaSelectorProps extends Props {
-  touchPos: SkiaMutableValue<TouchType | null>;
-  boxValues: SkiaValue<BoxValues[]>;
-}
 
 export interface BoxSkiaReanimatedProps extends Props {
   touchPos: SharedValue<TouchType | null>;

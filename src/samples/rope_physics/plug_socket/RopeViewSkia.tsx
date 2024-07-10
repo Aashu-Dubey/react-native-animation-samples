@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   StyleSheet,
   useColorScheme,
@@ -7,30 +7,23 @@ import {
 } from 'react-native';
 import {
   Canvas,
-  useValue,
-  useComputedValue,
   Skia,
   Path,
   StrokeJoin,
   StrokeCap,
-  useLoop,
   Circle,
-  SkiaMutableValue,
-  useSharedValueEffect,
   Group,
   BlurMask,
-  // useClockValue,
-  Selector,
-  PathDef,
   interpolateColors,
-  useTiming,
-  SkiaValue,
 } from '@shopify/react-native-skia';
 import Animated, {
+  cancelAnimation,
   runOnJS,
+  SharedValue,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
+  withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -42,17 +35,10 @@ import {
   UNIT_SIZE,
   UNPLUG_COLORS,
 } from './model';
-import { RopeProps, UnitCoords } from './types';
-
-type RopeColors = {
-  rope: string | Float32Array;
-  dash: string | Float32Array;
-  plug: string;
-  plugStroke: string;
-};
+import { ActiveUnitInfo, RopeProps, UnitCoords } from './types';
 
 interface GestureHandlerProps {
-  point: SkiaMutableValue<Point>;
+  point: SharedValue<Point>;
   units: UnitCoords[];
   activeIndex: number;
   onGesture: (isActive: boolean, activeUnit: number) => void;
@@ -65,9 +51,6 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   activeIndex,
   onGesture,
 }) => {
-  const posX = useSharedValue<number>(point.current.x);
-  const posY = useSharedValue<number>(point.current.y);
-
   const activeUnit = useSharedValue(0);
   // keeps the track when switching Skia <---> SVG
   useDerivedValue(() => (activeUnit.value = activeIndex), [activeIndex]);
@@ -77,8 +60,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
       runOnJS(onGesture)(true, activeUnit.value);
     })
     .onChange(e => {
-      posX.value = e.absoluteX;
-      posY.value = e.absoluteY;
+      point.value = { x: e.absoluteX, y: e.absoluteY };
     })
     .onEnd(e => {
       // Here we check if plug position is within a socket (input or output)
@@ -95,8 +77,10 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
         isWithinUnit = unit && isWithinX && isWithinY;
 
         if (isWithinUnit) {
-          posX.value = unit.startX + UNIT_SIZE / 2;
-          posY.value = unit.startY + UNIT_SIZE / 2;
+          point.value = {
+            x: unit.startX + UNIT_SIZE / 2,
+            y: unit.startY + UNIT_SIZE / 2,
+          };
           // activeUnit.value = i;
           runOnJS(onGesture)(false, i);
           return;
@@ -104,21 +88,15 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
       }
 
       const unit = units[activeUnit.value];
+
       if (unit && !isWithinUnit) {
-        posX.value = withTiming(unit.startX + UNIT_SIZE / 2);
-        posY.value = withTiming(unit.startY + UNIT_SIZE / 2, undefined, () =>
-          runOnJS(onGesture)(false, activeUnit.value),
+        point.value = withTiming(
+          { x: unit.startX + UNIT_SIZE / 2, y: unit.startY + UNIT_SIZE / 2 },
+          undefined,
+          () => runOnJS(onGesture)(false, activeUnit.value),
         );
       }
     });
-
-  useSharedValueEffect(
-    () => {
-      point.current = { x: posX.value, y: posY.value };
-    },
-    posX,
-    posY,
-  );
 
   const style = useAnimatedStyle(() => {
     return {
@@ -128,11 +106,11 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
       transform: [
         { translateX: -PLUG_RADIUS },
         { translateY: -PLUG_RADIUS },
-        { translateX: posX.value },
-        { translateY: posY.value },
+        { translateX: point.value.x },
+        { translateY: point.value.y },
       ],
     };
-  });
+  }, [point]);
 
   return (
     <GestureDetector gesture={panGesture}>
@@ -142,28 +120,36 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
 };
 
 interface PlugProp {
-  point: SkiaMutableValue<Point>;
-  colorsUtil: SkiaValue<RopeColors>;
+  point: SharedValue<Point>;
+  activeUnit: ActiveUnitInfo;
 }
 
 // The gesture controllable end points
-const Plug: React.FC<PlugProp> = ({ point, colorsUtil }) => {
-  const cx = useValue(point.current.x);
-  const cy = useValue(point.current.y);
+const Plug: React.FC<PlugProp> = ({ point, activeUnit }) => {
+  const cx = useSharedValue(point.value.x);
+  const cy = useSharedValue(point.value.y);
 
-  useComputedValue(() => {
-    cx.current = point.current.x;
-    cy.current = point.current.y;
+  useDerivedValue(() => {
+    cx.value = point.value.x;
+    cy.value = point.value.y;
   }, [point]);
+
+  const color = COLOR_UNITS[activeUnit.input];
+  const plugColor = activeUnit.isGestureActive
+    ? UNPLUG_COLORS.stroke
+    : color.icon;
+  const plugStrokeColor = activeUnit.isGestureActive
+    ? UNPLUG_COLORS.iconFill
+    : color.iconFill;
 
   const circleProps = { cx, cy, r: PLUG_RADIUS };
 
   return (
     <Group>
-      <Circle {...circleProps} color={Selector(colorsUtil, c => c.plug)} />
+      <Circle {...circleProps} color={plugColor} />
       <Circle
         {...circleProps}
-        color={Selector(colorsUtil, c => c.plugStroke)}
+        color={plugStrokeColor}
         style="stroke"
         strokeWidth={4}
       />
@@ -182,6 +168,7 @@ const createPath = (
   type: 'fill' | 'stroke' | 'shadow',
   dashPhase = 0.1,
 ) => {
+  'worklet';
   const path = Skia.Path.Make();
   path.moveTo(point1.x, point1.y);
   path.quadTo(slackPoint.x, slackPoint.y, point2.x, point2.y);
@@ -203,93 +190,116 @@ const RopeView: React.FC<RopeProps> = ({
   const window = useWindowDimensions();
   const isDarkMode = useColorScheme() === 'dark';
 
+  // This create a loop value constantly updating.
   // Used for stroke dashPhase animation and continuous spring calculation. Can also use 'useClock' for this.
-  const loop = useLoop();
-  // const clock = useClockValue();
+  const loop = useSharedValue(50);
+  useEffect(() => {
+    loop.value = withRepeat(withTiming(50), -1, false);
 
-  // Current spring point
-  const position = useValue({ x: 0, y: 0 });
+    return () => cancelAnimation(loop);
+  }, [loop]);
+
   // Plug end point Controllers
-  const plug1 = useValue<Point>({
+  const plug1 = useSharedValue<Point>({
     x: unitsInfo.inputUnits[activeUnit.input].startX + UNIT_SIZE / 2,
     y: unitsInfo.inputUnits[activeUnit.input].startY + UNIT_SIZE / 2,
   });
-  const plug2 = useValue<Point>({
+  const plug2 = useSharedValue<Point>({
     x: unitsInfo.outputUnits[activeUnit.output].startX + UNIT_SIZE / 2,
     y: unitsInfo.outputUnits[activeUnit.output].startY + UNIT_SIZE / 2,
   });
-  // rope, stroke and shadow path for Rope UI
-  const pathValue = useValue<PathDef>('');
-  const dashPathValue = useValue<PathDef>('');
-  const shadowPathValue = useValue<PathDef>('');
+
+  // Current spring point
+  const position = useSharedValue({ x: 0, y: 0 });
 
   // Animates the rope's color change
-  const colorAnim = useTiming(activeUnit.isGestureActive ? 0 : 1, {
-    duration: 400,
-  });
+  const colorAnim = useSharedValue(1);
+  useEffect(() => {
+    colorAnim.value = withTiming(activeUnit.isGestureActive ? 0 : 1, {
+      duration: 400,
+    });
+  }, [activeUnit.isGestureActive, colorAnim]);
 
   // We calculate time passed since screen initialisation to perform rope stroke animation.
   const initialTime = useRef(Date.now());
 
   // Change Plug and Rope color based on the state
-  const colorsUtil = useComputedValue<RopeColors>(() => {
-    const color = COLOR_UNITS[activeUnit.input];
-
-    return {
-      rope: interpolateColors(
-        colorAnim.current,
+  const ropeColor = useDerivedValue(
+    () =>
+      interpolateColors(
+        colorAnim.value,
         [0, 1],
-        [UNPLUG_COLORS.iconFill, color.icon],
+        [UNPLUG_COLORS.iconFill, COLOR_UNITS[activeUnit.input].icon],
       ),
-      dash: interpolateColors(
-        colorAnim.current,
+    [colorAnim, activeUnit],
+  );
+
+  const dashColor = useDerivedValue(
+    () =>
+      interpolateColors(
+        colorAnim.value,
         [0, 1],
         [UNPLUG_COLORS.iconFill, 'white'],
       ),
-      plug: activeUnit.isGestureActive ? UNPLUG_COLORS.stroke : color.icon,
-      plugStroke: activeUnit.isGestureActive
-        ? UNPLUG_COLORS.iconFill
-        : color.iconFill,
-    };
-  }, [colorAnim, activeUnit]);
+    [colorAnim, activeUnit],
+  );
 
   // Here we calculate the spring position based on the end points (Plugs)
-  useComputedValue(() => {
+  const updatePath = () => {
     const midpoint = {
-      x: (plug1.current.x + plug2.current.x) / 2,
-      y: (plug1.current.y + plug2.current.y) / 2,
+      x: (plug1.value.x + plug2.value.x) / 2,
+      y: (plug1.value.y + plug2.value.y) / 2,
     };
-    const slack = slackDecline(plug1.current, plug2.current);
+    const slack = slackDecline(plug1.value, plug2.value);
 
     const anchor = { x: midpoint.x, y: midpoint.y + slack };
-    const newPos = calculateSpringPoint(position.current, anchor, 10, 8, 4);
 
-    if (JSON.stringify(position.current) !== JSON.stringify(newPos)) {
-      pathValue.current = createPath(
-        plug1.current,
-        plug2.current,
-        newPos,
-        'fill',
-      );
-      shadowPathValue.current = createPath(
-        plug1.current,
-        plug2.current,
+    const prevPos = position.value;
+    const newPos = calculateSpringPoint(prevPos, anchor, 10, 8, 4);
+    // This check here is needed to make the callback stop at some points, avoiding infinite callbacks even on no touch
+    if (JSON.stringify(position.value) !== JSON.stringify(newPos)) {
+      position.value = newPos;
+    }
+  };
+
+  const paths = useDerivedValue(() => {
+    runOnJS(updatePath)();
+
+    const newPos = position.value;
+
+    return {
+      pathValue: createPath(plug1.value, plug2.value, newPos, 'fill'),
+      shadowPathValue: createPath(
+        plug1.value,
+        plug2.value,
         { ...newPos, y: newPos.y + 50 },
         'shadow',
-      );
-      position.current = newPos;
-    }
+      ),
+    };
+  }, [plug1, plug2, position, updatePath]);
 
-    // Rope Stroke
-    dashPathValue.current = createPath(
-      plug1.current,
-      plug2.current,
-      newPos,
-      'stroke',
-      ((Date.now() - initialTime.current) / 1000) * -50,
-      // clock.current,
-    );
-  }, [loop /* clock */, plug1, plug2]);
+  // Rope path for Rope UI
+  const pathValue = useDerivedValue(() => paths.value.pathValue, [paths]);
+
+  // Rope Shadow path for Rope UI
+  const shadowPathValue = useDerivedValue(
+    () => paths.value.shadowPathValue,
+    [paths],
+  );
+
+  // Rope Stroke path for Rope UI
+  const dashPathValue = useDerivedValue(
+    () =>
+      createPath(
+        plug1.value,
+        plug2.value,
+        position.value,
+        'stroke',
+        ((Date.now() - initialTime.current) / 1000) * -loop.value,
+      ),
+    // 'paths' isn't used, but needed to keep the dash path in sync with the main one
+    [loop, plug1, plug2, position, paths],
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -299,11 +309,11 @@ const RopeView: React.FC<RopeProps> = ({
           styles.container,
         ]}
       >
-        <Plug point={plug1} {...{ colorsUtil }} />
-        <Plug point={plug2} {...{ colorsUtil }} />
+        <Plug point={plug1} {...{ activeUnit }} />
+        <Plug point={plug2} {...{ activeUnit }} />
 
         {/* Rope */}
-        <Path path={pathValue} color={Selector(colorsUtil, c => c.rope)} />
+        <Path path={pathValue} color={ropeColor} />
         {/* Glow effect, inactive when gesture is active */}
         {!activeUnit.isGestureActive && (
           <Path path={pathValue} color="#fefefe">
@@ -311,7 +321,7 @@ const RopeView: React.FC<RopeProps> = ({
           </Path>
         )}
         {/* Stroke */}
-        <Path path={dashPathValue} color={Selector(colorsUtil, c => c.dash)} />
+        <Path path={dashPathValue} color={dashColor} />
         {/* Shadow effect */}
         {!isDarkMode && (
           <Path path={shadowPathValue} color="darkgrey">

@@ -173,13 +173,14 @@ const PlugSocketsView = () => {
                 viewRefs.current.input[index]?.measure(
                   (_x, _y, _w, _h, pageX, pageY) =>
                     setUnitsInfo(units => {
-                      units.inputUnits[index] = {
+                      const inputUnits = [...units.inputUnits];
+                      inputUnits[index] = {
                         startX: pageX,
                         endX: pageX + UNIT_SIZE,
                         startY: pageY,
                         endY: pageY + UNIT_SIZE,
                       };
-                      return { ...units };
+                      return { ...units, inputUnits };
                     }),
                 );
               }}
@@ -197,13 +198,14 @@ const PlugSocketsView = () => {
                 viewRefs.current.output[index]?.measure(
                   (_x, _y, _w, _h, pageX, pageY) =>
                     setUnitsInfo(units => {
-                      units.outputUnits[index] = {
+                      const outputUnits = [...units.outputUnits];
+                      outputUnits[index] = {
                         startX: pageX,
                         endX: pageX + UNIT_SIZE,
                         startY: pageY,
                         endY: pageY + UNIT_SIZE,
                       };
-                      return { ...units };
+                      return { ...units, outputUnits };
                     }),
                 );
               }}
