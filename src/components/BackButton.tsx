@@ -18,7 +18,10 @@ const BackButton: React.FC<Props> = ({ style }) => {
         { opacity: !Config.isAndroid && pressed ? 0.6 : 1 },
         style,
       ]}
-      android_ripple={{ color: 'darkgrey', borderless: true, radius: 22 }}
+      // On latest RN versions applying borderless cause the button not to show on Android, to temporarily disabling it
+      // Another solution is to apply collapsable={false} on the parent component
+      // ref: https://github.com/facebook/react-native/issues/48552
+      android_ripple={{ color: 'darkgrey'/* , borderless: true */, radius: 22 }}
       onPress={() => navigation.goBack()}
     >
       <Icon name="arrow-back-ios" size={18} color="white" />

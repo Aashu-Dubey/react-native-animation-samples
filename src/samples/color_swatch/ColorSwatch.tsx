@@ -142,7 +142,9 @@ const ColorSwatch = () => {
 
         <View style={{ flex: 1, margin: 40, justifyContent: 'flex-end' }}>
           <GestureDetector gesture={dragGesture}>
-            <View style={styles.paletteSize}>
+            {/* On latest RN versions it doesn't detect click on items first time, unless we click a clickable color item
+            or refresh, so added width auto to get around that */}
+            <View style={[styles.paletteSize, { width: 'auto' }]}>
               {COLOR_PALETTE.map((colors, index) => (
                 <PaletteItem
                   key={index}

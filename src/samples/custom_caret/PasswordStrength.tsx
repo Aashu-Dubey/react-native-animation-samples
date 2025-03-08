@@ -80,16 +80,12 @@ const PasswordStrength = () => {
 
   useEffect(() => {
     if (isInputFocused) {
+      cursorOpacity.value = 1;
       cursorOpacity.value = withRepeat(withTiming(0, { duration: 1000 }), -1);
       tickState.value = 0;
     } else {
-      cursorOpacity.value = password.length > 0 ? 1 : 0;
+      cursorOpacity.value = withTiming(password.length > 0 ? 1 : 0);
     }
-
-    return () => {
-      cursorOpacity.value = 1;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [password, isInputFocused]);
 
   const cursorStyle = useAnimatedStyle(
@@ -107,7 +103,7 @@ const PasswordStrength = () => {
       }
 
       return {
-        width: withTiming(caretWidth),
+        width: caretWidth,
         //   left: cursorX.value,
         transform: [
           {
@@ -122,18 +118,23 @@ const PasswordStrength = () => {
             ),
           },
         ],
-        opacity: cursorOpacity.value,
       };
     },
-    //   , [cursorX, cursorOpacity]
+     [cursorX, caretPosition, password, inputDimension, tickState, isInputFocused]
   );
+
+    const cursorOpacityStyle = useAnimatedStyle(() => {
+      return {
+        opacity: cursorOpacity.value,
+      };
+    }, [cursorOpacity]);
 
   const tickAnim = useAnimatedStyle(() => {
     return {
-      opacity: withSpring(tickState.value),
+      opacity: tickState.value,
       transform: [{ scale: withSpring(tickState.value) }],
     };
-  });
+  }, [tickState]);
 
   const caretFillStyle = useAnimatedStyle(() => {
     const fillPercent = (password.length / MAX_LENGTH) * 100;
@@ -217,6 +218,7 @@ const PasswordStrength = () => {
               styles.cursor,
               { height: inputDimension.height },
               cursorStyle,
+              cursorOpacityStyle,
             ]}
           >
             <Animated.View style={[styles.tickContainer, caretFillStyle]}>
@@ -239,6 +241,7 @@ const PasswordStrength = () => {
       </View>
       <View style={{ position: 'absolute', opacity: 0 }} pointerEvents="none">
         <TextInput
+          style={{ paddingHorizontal: 0 }}
           //   secureTextEntry
           value={password.substring(0, caretPosition.start)}
           onLayout={event => {

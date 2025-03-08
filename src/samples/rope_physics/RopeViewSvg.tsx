@@ -81,9 +81,21 @@ const RopeViewSvg: React.FC = () => {
   // We calculate time passed since screen initialisation to perform rope stroke animation.
   const initialTime = useRef(Date.now());
 
-  const plug1AnimatedProps = useAnimatedProps(() => ({ ...plug1.value }));
+  const plug1AnimatedProps = useAnimatedProps(() => ({ 
+    // ...plug1.value,
+    transform: [
+      { translateX: plug1.value.x },
+      { translateY: plug1.value.y },
+    ],
+   }), [plug1]);
 
-  const plug2AnimatedProps = useAnimatedProps(() => ({ ...plug2.value }));
+  const plug2AnimatedProps = useAnimatedProps(() => ({ 
+    // ...plug2.value,
+    transform: [
+      { translateX: plug2.value.x },
+      { translateY: plug2.value.y },
+    ],
+   }), [plug2]);
 
   // Calculates new spring position
   const updatePath = () => {

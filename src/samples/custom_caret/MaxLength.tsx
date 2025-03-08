@@ -24,22 +24,18 @@ const MaxLength = () => {
   useEffect(() => {
     if (name.length < MAX_LENGTH) {
       if (isInputFocused) {
+        cursorOpacity.value = 1;
         cursorOpacity.value = withRepeat(withTiming(0, { duration: 1000 }), -1);
       } else {
         cursorOpacity.value = 0;
       }
     } else {
-      cursorOpacity.value = 1;
+      cursorOpacity.value = withTiming(1);
     }
 
     if (name.length <= MAX_LENGTH - 1) {
       tickState.value = 0;
     }
-
-    return () => {
-      cursorOpacity.value = 1;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, isInputFocused]);
 
   const cursorStyle = useAnimatedStyle(
@@ -57,7 +53,7 @@ const MaxLength = () => {
       }
 
       return {
-        width: withTiming(caretWidth),
+        width: caretWidth,
         transform: [
           {
             translateX: withTiming(
@@ -71,18 +67,23 @@ const MaxLength = () => {
             ),
           },
         ],
-        opacity: cursorOpacity.value,
       };
     },
-    //   , [cursorX, cursorOpacity]
+    [cursorX, caretPosition, name, inputDimension, tickState],
   );
+
+  const cursorOpacityStyle = useAnimatedStyle(() => {
+    return {
+      opacity: cursorOpacity.value,
+    };
+  }, [cursorOpacity]);
 
   const tickAnim = useAnimatedStyle(() => {
     return {
-      opacity: withSpring(tickState.value),
+      opacity: tickState.value,
       transform: [{ scale: withSpring(tickState.value) }],
     };
-  });
+  }, [tickState]);
 
   const fillPercent = (name.length / MAX_LENGTH) * 100;
   const caretFillHeight = (fillPercent / 100) * inputDimension.height;
@@ -124,6 +125,7 @@ const MaxLength = () => {
               styles.cursor,
               { height: inputDimension.height },
               cursorStyle,
+              cursorOpacityStyle,
             ]}
           >
             <View style={[styles.tickContainer, { height: caretFillHeight }]}>
@@ -136,6 +138,7 @@ const MaxLength = () => {
       </View>
       <View style={{ position: 'absolute', opacity: 0 }} pointerEvents="none">
         <TextInput
+          style={{ paddingHorizontal: 0 }}
           value={name.substring(0, caretPosition.start)}
           onLayout={event => {
             // Update cursor position, shouldn't extend input total width

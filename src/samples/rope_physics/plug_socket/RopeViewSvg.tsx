@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Animated, {
-  createAnimatedPropAdapter,
+  AnimatedProps,
   interpolateColor,
-  processColor,
   runOnJS,
   SharedValue,
   useAnimatedProps,
@@ -38,20 +37,6 @@ type RopeColors = {
   plug: string;
   plugStroke: string;
 };
-
-// rn-svg: after v13.x.x to use 'fill' or 'stroke' with 'useAnimatedProps' we need to pass this adapter as argument
-// ref: https://github.com/software-mansion/react-native-svg/issues/1845#issuecomment-1247836723
-const animatedPropAdapter = createAnimatedPropAdapter(
-  (props: any) => {
-    if (Object.keys(props).includes('fill')) {
-      props.fill = { type: 0, payload: processColor(props.fill) };
-    }
-    if (Object.keys(props).includes('stroke')) {
-      props.stroke = { type: 0, payload: processColor(props.stroke) };
-    }
-  },
-  ['fill', 'stroke'],
-);
 
 // Here we position a RN view above the SVG view (Plug), to control the component's gestures.
 const GestureHandler: React.FC<GestureHandlerProps> = ({
@@ -192,16 +177,27 @@ const RopeViewSvg: React.FC<RopeProps> = ({
   // We calculate time passed since screen initialisation to perform rope stroke animation.
   const initialTime = useRef(Date.now());
 
-  const plug1AnimatedProps = useAnimatedProps(() => ({ ...plug1.value }));
+  const plug1AnimatedProps = useAnimatedProps(() => ({ 
+    // ...plug1.value,
+    transform: [
+      { translateX: plug1.value.x },
+      { translateY: plug1.value.y },
+    ],
+  }), [plug1]);
 
-  const plug2AnimatedProps = useAnimatedProps(() => ({ ...plug2.value }));
+  const plug2AnimatedProps = useAnimatedProps(() => ({ 
+    // ...plug2.value,
+    transform: [
+      { translateX: plug2.value.x },
+      { translateY: plug2.value.y },
+    ],
+  }), [plug2]);
 
   const plugAnimProps = useAnimatedProps(
     () => ({
       fill: colorsUtil.value.plug,
     }),
     [colorsUtil],
-    animatedPropAdapter,
   );
 
   const plugStrokeAnimProps = useAnimatedProps(
@@ -209,7 +205,6 @@ const RopeViewSvg: React.FC<RopeProps> = ({
       stroke: colorsUtil.value.plugStroke,
     }),
     [colorsUtil],
-    animatedPropAdapter,
   );
 
   // Calculates new spring position
@@ -230,12 +225,11 @@ const RopeViewSvg: React.FC<RopeProps> = ({
     runOnJS(updatePath)();
 
     return `M${plug1.value.x} ${plug1.value.y} Q${quadPos.value.x},${quadPos.value.y} ${plug2.value.x},${plug2.value.y}`;
-  }, [plug1, plug2, updatePath]);
+  }, [plug1, plug2, quadPos, updatePath]);
 
   const fillPath = useAnimatedProps(
     () => ({ d: path.value, stroke: colorsUtil.value.rope }),
     [path, colorsUtil],
-    animatedPropAdapter,
   );
 
   const strokePath = useAnimatedProps(
@@ -246,10 +240,9 @@ const RopeViewSvg: React.FC<RopeProps> = ({
         ((Date.now() - initialTime.current) / 1000) * -loop.value,
     }),
     [path, colorsUtil, loop],
-    animatedPropAdapter,
   );
 
-  const renderPlug = (animatedProps: Animated.AnimateProps<GProps>) => (
+  const renderPlug = (animatedProps: AnimatedProps<GProps>) => (
     <AnimatedGroup {...{ animatedProps }}>
       <AnimatedCircle animatedProps={plugAnimProps} r={PLUG_RADIUS} />
       <AnimatedCircle

@@ -142,8 +142,8 @@ const Button: React.FC<ButtonType> = ({ item, index, offset, activeY }) => {
           styles.buttonContainer,
           {
             width: btnWidth.current,
-            transform: [{ scale: btnScale.current }],
-            top: topForRb.current,
+            transform: [{ translateY: topForRb.current }, { scale: btnScale.current }],
+            // top: topForRb.current,
             backgroundColor: item.color,
           },
         ]}

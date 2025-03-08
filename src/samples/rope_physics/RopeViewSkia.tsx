@@ -246,13 +246,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  boxView: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 6,
-    margin: 6,
-    overflow: 'hidden',
-  },
 });
 
 export default RopeView;
