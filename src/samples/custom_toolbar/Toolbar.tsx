@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  useColorScheme,
-  View,
-} from 'react-native';
+import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, {
   Easing,
   SharedValue,
@@ -16,7 +10,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { usePanGesture, GestureDetector } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SFSymbol } from 'react-native-sfsymbols';
 import { BUTTONS_LIST } from './buttons';
@@ -55,7 +50,7 @@ const Button: React.FC<ButtonType> = ({ item, index, activeY, offset }) => {
       itemEndPos < offset.value || itemStartPos > offset.value + TOOLBAR_HEIGHT;
 
     return {
-      width: withSpring(isItemActive.value ? 140 : 50, { damping: 15 }),
+      width: withSpring(isItemActive.value ? 140 : 50, { damping: 80 }),
       // For Scroll Rubberbanding effect
       top:
         offset.value < 0 // Top
@@ -138,17 +133,18 @@ const Toolbar = () => {
   // Contains list scroll offset from top. In (-) when user scroll past the top on iOS (important to activate Rubberbanding effect).
   const scrollOffset = useSharedValue(0);
 
-  const dragGesture = Gesture.Pan()
-    .activateAfterLongPress(200)
-    .onStart(_e => {
-      activeY.value = _e.y;
-    })
-    .onUpdate(e => {
+  const dragGesture = usePanGesture({
+    activateAfterLongPress: 200,
+    onActivate: e => {
       activeY.value = e.y;
-    })
-    .onEnd(() => {
+    },
+    onUpdate: e => {
+      activeY.value = e.y;
+    },
+    onDeactivate: () => {
       activeY.value = 0;
-    });
+    },
+  });
 
   const scrollHandler = useAnimatedScrollHandler(e => {
     scrollOffset.value = e.contentOffset?.y ?? 0;

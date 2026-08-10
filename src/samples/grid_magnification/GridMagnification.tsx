@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { usePanGesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -57,10 +57,10 @@ const Box: React.FC<BoxProps> = ({ totalCol, icon, index, touchPos }) => {
 
     const isAnimStartOrEnd = touchPos.value?.isFirst || touchPos.value === null;
     const tx = isAnimStartOrEnd
-      ? withSpring(translateX, { damping: 20, mass: 0.8 })
+      ? withSpring(translateX, { damping: 120, mass: 3 })
       : translateX;
     const ty = isAnimStartOrEnd
-      ? withSpring(translateY, { damping: 20, mass: 0.8 })
+      ? withSpring(translateY, { damping: 120, mass: 3 })
       : translateY;
     const scale = interpolate(
       distance,
@@ -81,7 +81,7 @@ const Box: React.FC<BoxProps> = ({ totalCol, icon, index, touchPos }) => {
         // Make it dynamic?
         {
           scale: isAnimStartOrEnd
-            ? withSpring(scale, { damping: 20, mass: 0.8 })
+            ? withSpring(scale, { damping: 120, mass: 3 })
             : scale,
         },
       ],
@@ -139,16 +139,17 @@ const GridMagnification: React.FC = () => {
     });
   }, [window, inset]);
 
-  const dragGesture = Gesture.Pan()
-    .onBegin(e => {
+  const dragGesture = usePanGesture({
+    onBegin: e => {
       touchPos.value = { x: e.x, y: e.y, isFirst: true };
-    })
-    .onUpdate(e => {
+    },
+    onUpdate: e => {
       touchPos.value = { x: e.x, y: e.y, isFirst: false };
-    })
-    .onFinalize(() => {
+    },
+    onFinalize: () => {
       touchPos.value = null;
-    });
+    },
+  });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>

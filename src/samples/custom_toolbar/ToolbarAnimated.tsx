@@ -142,8 +142,11 @@ const Button: React.FC<ButtonType> = ({ item, index, offset, activeY }) => {
           styles.buttonContainer,
           {
             width: btnWidth.current,
-            transform: [{ scale: btnScale.current }],
-            top: topForRb.current,
+            transform: [
+              { translateY: topForRb.current },
+              { scale: btnScale.current },
+            ],
+            // top: topForRb.current,
             backgroundColor: item.color,
           },
         ]}
@@ -189,9 +192,9 @@ const ToolbarMacos = () => {
 
   const [isLongPressed, setLongPressed] = useState(false);
 
-  const listRef = useRef<View | null>(null);
+  const listRef = useRef<React.ComponentRef<typeof View> | null>(null);
   const listViewOffset = useRef<number>(0);
-  const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimeout = useRef<number | null>(null);
 
   const activeY = useRef(new Animated.Value(0)).current;
   const scrollOffset = useRef(new Animated.Value(0)).current;

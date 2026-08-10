@@ -1,10 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Animated, {
-  createAnimatedPropAdapter,
   interpolateColor,
-  processColor,
-  runOnJS,
   SharedValue,
   useAnimatedProps,
   useAnimatedStyle,
@@ -13,7 +10,8 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { scheduleOnRN } from 'react-native-worklets';
+import { usePanGesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { G, Path, Circle, GProps } from 'react-native-svg';
 import { calculateSpringPoint, Point, slackDecline } from '../helper';
 import {
@@ -39,20 +37,6 @@ type RopeColors = {
   plugStroke: string;
 };
 
-// rn-svg: after v13.x.x to use 'fill' or 'stroke' with 'useAnimatedProps' we need to pass this adapter as argument
-// ref: https://github.com/software-mansion/react-native-svg/issues/1845#issuecomment-1247836723
-const animatedPropAdapter = createAnimatedPropAdapter(
-  (props: any) => {
-    if (Object.keys(props).includes('fill')) {
-      props.fill = { type: 0, payload: processColor(props.fill) };
-    }
-    if (Object.keys(props).includes('stroke')) {
-      props.stroke = { type: 0, payload: processColor(props.stroke) };
-    }
-  },
-  ['fill', 'stroke'],
-);
-
 // Here we position a RN view above the SVG view (Plug), to control the component's gestures.
 const GestureHandler: React.FC<GestureHandlerProps> = ({
   point,
@@ -60,22 +44,18 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   activeIndex,
   onGesture,
 }) => {
-  const posX = useSharedValue<number>(point.value.x);
-  const posY = useSharedValue<number>(point.value.y);
-
   const activeUnit = useSharedValue(0);
   // keeps the track when switching Skia <---> SVG
   useDerivedValue(() => (activeUnit.value = activeIndex), [activeIndex]);
 
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      runOnJS(onGesture)(true, activeUnit.value);
-    })
-    .onChange(e => {
-      posX.value = e.absoluteX;
-      posY.value = e.absoluteY;
-    })
-    .onEnd(e => {
+  const panGesture = usePanGesture({
+    onActivate: () => {
+      scheduleOnRN(onGesture, true, activeUnit.value);
+    },
+    onUpdate: e => {
+      point.value = { x: e.absoluteX, y: e.absoluteY };
+    },
+    onDeactivate: e => {
       // Here we check if plug position is within a socket (input or output)
       // if yes then update active output socket's UI based on that active input socket's theme
       const x = e.absoluteX;
@@ -90,26 +70,26 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
         isWithinUnit = unit && isWithinX && isWithinY;
 
         if (isWithinUnit) {
-          posX.value = unit.startX + UNIT_SIZE / 2;
-          posY.value = unit.startY + UNIT_SIZE / 2;
+          point.value = {
+            x: unit.startX + UNIT_SIZE / 2,
+            y: unit.startY + UNIT_SIZE / 2,
+          };
           // activeUnit.value = i;
-          runOnJS(onGesture)(false, i);
+          scheduleOnRN(onGesture, false, i);
           return;
         }
       }
 
       const unit = units[activeUnit.value];
       if (unit && !isWithinUnit) {
-        posX.value = withTiming(unit.startX + UNIT_SIZE / 2);
-        posY.value = withTiming(unit.startY + UNIT_SIZE / 2, undefined, () =>
-          runOnJS(onGesture)(false, activeUnit.value),
+        point.value = withTiming(
+          { x: unit.startX + UNIT_SIZE / 2, y: unit.startY + UNIT_SIZE / 2 },
+          undefined,
+          () => scheduleOnRN(onGesture, false, activeUnit.value),
         );
       }
-    });
-
-  useDerivedValue(() => {
-    point.value = { x: posX.value, y: posY.value };
-  }, [posX, posY]);
+    },
+  });
 
   const style = useAnimatedStyle(() => {
     return {
@@ -119,8 +99,8 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
       transform: [
         { translateX: -PLUG_RADIUS },
         { translateY: -PLUG_RADIUS },
-        { translateX: posX.value },
-        { translateY: posY.value },
+        { translateX: point.value.x },
+        { translateY: point.value.y },
       ],
     };
   });
@@ -192,16 +172,27 @@ const RopeViewSvg: React.FC<RopeProps> = ({
   // We calculate time passed since screen initialisation to perform rope stroke animation.
   const initialTime = useRef(Date.now());
 
-  const plug1AnimatedProps = useAnimatedProps(() => ({ ...plug1.value }));
+  const plug1AnimatedProps = useAnimatedProps(
+    () => ({
+      // ...plug1.value,
+      transform: [{ translateX: plug1.value.x }, { translateY: plug1.value.y }],
+    }),
+    [plug1],
+  );
 
-  const plug2AnimatedProps = useAnimatedProps(() => ({ ...plug2.value }));
+  const plug2AnimatedProps = useAnimatedProps(
+    () => ({
+      // ...plug2.value,
+      transform: [{ translateX: plug2.value.x }, { translateY: plug2.value.y }],
+    }),
+    [plug2],
+  );
 
   const plugAnimProps = useAnimatedProps(
     () => ({
       fill: colorsUtil.value.plug,
     }),
     [colorsUtil],
-    animatedPropAdapter,
   );
 
   const plugStrokeAnimProps = useAnimatedProps(
@@ -209,7 +200,6 @@ const RopeViewSvg: React.FC<RopeProps> = ({
       stroke: colorsUtil.value.plugStroke,
     }),
     [colorsUtil],
-    animatedPropAdapter,
   );
 
   // Calculates new spring position
@@ -227,15 +217,14 @@ const RopeViewSvg: React.FC<RopeProps> = ({
   };
 
   const path = useDerivedValue(() => {
-    runOnJS(updatePath)();
+    scheduleOnRN(updatePath);
 
     return `M${plug1.value.x} ${plug1.value.y} Q${quadPos.value.x},${quadPos.value.y} ${plug2.value.x},${plug2.value.y}`;
-  }, [plug1, plug2, updatePath]);
+  }, [plug1, plug2, quadPos, updatePath]);
 
   const fillPath = useAnimatedProps(
     () => ({ d: path.value, stroke: colorsUtil.value.rope }),
     [path, colorsUtil],
-    animatedPropAdapter,
   );
 
   const strokePath = useAnimatedProps(
@@ -246,10 +235,9 @@ const RopeViewSvg: React.FC<RopeProps> = ({
         ((Date.now() - initialTime.current) / 1000) * -loop.value,
     }),
     [path, colorsUtil, loop],
-    animatedPropAdapter,
   );
 
-  const renderPlug = (animatedProps: Animated.AnimateProps<GProps>) => (
+  const renderPlug = (animatedProps: Partial<GProps>) => (
     <AnimatedGroup {...{ animatedProps }}>
       <AnimatedCircle animatedProps={plugAnimProps} r={PLUG_RADIUS} />
       <AnimatedCircle

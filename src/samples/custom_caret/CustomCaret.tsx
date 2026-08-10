@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, SafeAreaView, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MaxLength from './MaxLength';
 import PasswordStrength from './PasswordStrength';
 import { BackButton } from '../../components';

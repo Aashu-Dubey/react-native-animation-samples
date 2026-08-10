@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
   },
   gridItemPressable: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     padding: 4,
