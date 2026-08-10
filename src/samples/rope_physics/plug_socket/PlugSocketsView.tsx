@@ -23,12 +23,12 @@ interface UnitViewProps {
   index: number;
   activeInput?: ActiveUnitInfo | null;
   onLayout: ((event: LayoutChangeEvent) => void) | undefined;
-  getRef: React.LegacyRef<View> | undefined;
+  getRef: React.Ref<React.ComponentRef<typeof View>> | undefined;
 }
 
 type UnitViewRefs = {
-  input: Array<View | null>;
-  output: Array<View | null>;
+  input: Array<React.ComponentRef<typeof View> | null>;
+  output: Array<React.ComponentRef<typeof View> | null>;
 };
 
 // Unit view showing on left and right indicating input and output
@@ -81,7 +81,7 @@ const UnitView: React.FC<UnitViewProps> = ({
               size={30}
               resizeMode="center"
               multicolor={false}
-              style={{ ...StyleSheet.absoluteFillObject }}
+              style={{ ...StyleSheet.absoluteFill }}
             />
           </>
         ) : (
@@ -92,7 +92,7 @@ const UnitView: React.FC<UnitViewProps> = ({
               size={48}
             />
             <Icon
-              style={{ ...StyleSheet.absoluteFillObject }}
+              style={{ ...StyleSheet.absoluteFill }}
               name="home-circle-outline"
               color={activeUnit.color.iconFill}
               size={48}
@@ -184,7 +184,9 @@ const PlugSocketsView = () => {
                     }),
                 );
               }}
-              getRef={ref => (viewRefs.current.input[index] = ref)}
+              getRef={ref => {
+                viewRefs.current.input[index] = ref;
+              }}
             />
           ))}
         </View>
@@ -209,14 +211,16 @@ const PlugSocketsView = () => {
                     }),
                 );
               }}
-              getRef={ref => (viewRefs.current.output[index] = ref)}
+              getRef={ref => {
+                viewRefs.current.output[index] = ref;
+              }}
             />
           ))}
         </View>
       </View>
 
       {/* Rope View */}
-      <View style={{ ...StyleSheet.absoluteFillObject }}>
+      <View style={{ ...StyleSheet.absoluteFill }}>
         {unitsInfo.inputUnits?.[0] &&
           unitsInfo.outputUnits?.[0] &&
           (solutionSvg ? (

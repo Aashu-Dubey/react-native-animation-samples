@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, SafeAreaView, TextInput } from 'react-native';
+import { Text, View, StyleSheet, TextInput } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -36,41 +36,38 @@ const MaxLength = () => {
     if (name.length <= MAX_LENGTH - 1) {
       tickState.value = 0;
     }
-  }, [name, isInputFocused]);
+  }, [name, isInputFocused, cursorOpacity, tickState]);
 
-  const cursorStyle = useAnimatedStyle(
-    () => {
-      let caretWidth = caretPosition.start < name.length ? 2 : 4;
-      let caretPositionX = cursorX.value;
-      if (name.length === MAX_LENGTH) {
-        caretWidth = inputDimension.height;
-        caretPositionX = inputDimension.width - inputDimension.height;
-      } else {
-        // Getting some incorrect ~3 width with no text, so setting it 0 here
-        if (name.length === 0 || caretPosition.start === 0) {
-          caretPositionX = 0;
-        }
+  const cursorStyle = useAnimatedStyle(() => {
+    let caretWidth = caretPosition.start < name.length ? 2 : 4;
+    let caretPositionX = cursorX.value;
+    if (name.length === MAX_LENGTH) {
+      caretWidth = inputDimension.height;
+      caretPositionX = inputDimension.width - inputDimension.height;
+    } else {
+      // Getting some incorrect ~3 width with no text, so setting it 0 here
+      if (name.length === 0 || caretPosition.start === 0) {
+        caretPositionX = 0;
       }
+    }
 
-      return {
-        width: caretWidth,
-        transform: [
-          {
-            translateX: withTiming(
-              caretPositionX,
-              { duration: 250 },
-              finished => {
-                if (finished && name.length === MAX_LENGTH) {
-                  tickState.value = 1;
-                }
-              },
-            ),
-          },
-        ],
-      };
-    },
-    [cursorX, caretPosition, name, inputDimension, tickState],
-  );
+    return {
+      width: caretWidth,
+      transform: [
+        {
+          translateX: withTiming(
+            caretPositionX,
+            { duration: 250 },
+            finished => {
+              if (finished && name.length === MAX_LENGTH) {
+                tickState.value = 1;
+              }
+            },
+          ),
+        },
+      ],
+    };
+  }, [cursorX, caretPosition, name, inputDimension, tickState]);
 
   const cursorOpacityStyle = useAnimatedStyle(() => {
     return {
@@ -89,7 +86,7 @@ const MaxLength = () => {
   const caretFillHeight = (fillPercent / 100) * inputDimension.height;
 
   return (
-    <SafeAreaView>
+    <View>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.fieldTitle}>Username</Text>
@@ -136,10 +133,26 @@ const MaxLength = () => {
           </Animated.View>
         </View>
       </View>
+
+      {/* Approach 1 - Using hidden TextInput */}
+      {/* <TextInput
+        style={{ paddingHorizontal: 0, position: 'absolute', opacity: 0 }}
+        value={name.substring(0, caretPosition.start)}
+        onLayout={event => {
+          // Update cursor position, shouldn't extend input total width
+          cursorX.value = Math.min(
+            event.nativeEvent.layout.width,
+            inputDimension.width,
+          );
+        }}
+        pointerEvents="none"
+      /> */}
+
+      {/* Approach 2 - Using hidden Text */}
       <View style={{ position: 'absolute', opacity: 0 }} pointerEvents="none">
-        <TextInput
-          style={{ paddingHorizontal: 0 }}
-          value={name.substring(0, caretPosition.start)}
+        <Text
+          style={{ alignSelf: 'flex-start' }}
+          numberOfLines={1}
           onLayout={event => {
             // Update cursor position, shouldn't extend input total width
             cursorX.value = Math.min(
@@ -147,9 +160,11 @@ const MaxLength = () => {
               inputDimension.width,
             );
           }}
-        />
+        >
+          {name.substring(0, caretPosition.start)}
+        </Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

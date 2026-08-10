@@ -3,12 +3,12 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   Canvas,
   RoundedRect,
-  useImage,
-  Group,
+  // useImage,
+  // Group,
   dist,
-  ImageShader,
+  // ImageShader,
 } from '@shopify/react-native-skia';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { usePanGesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   Extrapolation,
   interpolate,
@@ -37,7 +37,7 @@ const Box: React.FC<BoxSkiaReanimatedProps> = ({
   const translateH = useSharedValue(0);
   const translateV = useSharedValue(0);
 
-  const image = useImage(icon);
+  // const image = useImage(icon);
 
   // With Spring effect
   const transformNew = useDerivedValue(() => {
@@ -46,7 +46,7 @@ const Box: React.FC<BoxSkiaReanimatedProps> = ({
 
     if (transAnim) {
       if (isAnimStartOrEnd) {
-        const springConfig = { damping: 20, mass: 0.8 };
+        const springConfig = { damping: 120, mass: 3 };
         translateH.value = withSpring(transAnim.translateX, springConfig);
         translateV.value = withSpring(transAnim.translateY, springConfig);
         itemScale.value = withSpring(transAnim.scale, springConfig);
@@ -71,26 +71,50 @@ const Box: React.FC<BoxSkiaReanimatedProps> = ({
     ]);
   }, [itemScale, translateH, translateV]); */
 
-  const PAD = 6;
-  const props = {
-    x: boxValues.value[index]?.x ?? 0,
-    y: boxValues.value[index]?.y ?? 0,
+  const x = useDerivedValue(() => {
+    return boxValues.value[index]?.x ?? 0;
+  }, [boxValues, index]);
+
+  const y = useDerivedValue(() => {
+    return boxValues.value[index]?.y ?? 0;
+  }, [boxValues, index]);
+
+  const origin = useDerivedValue(() => {
+    return boxValues.value[index]?.origin;
+  }, [boxValues, index]);
+
+  /* const PAD = 6;
+  const dimension = {
     width: boxSize - PAD * 2,
     height: boxSize - PAD * 2,
   };
+  const props = { x: x, y: y, ...dimension };
+  const rectProps = useDerivedValue(() => {
+    return { x: x.value, y: x.value, ...dimension };
+  }, [x, y]); */
 
   return (
-    <Group
+    <RoundedRect
+      {...{ x, y }}
+      width={20}
+      height={20}
+      // matrix={matrix}
       transform={transformNew}
-      /* matrix={matrix} */
-      origin={boxValues.value[index]?.origin}
-    >
-      {image && (
-        <RoundedRect {...props} r={6}>
-          <ImageShader image={image} fit="cover" rect={props} />
-        </RoundedRect>
-      )}
-    </Group>
+      origin={origin}
+      color="white"
+      r={6}
+    />
+    // <Group
+    //   transform={transformNew}
+    //   // matrix={matrix}
+    //   origin={origin}
+    // >
+    //   {image && (
+    //     <RoundedRect {...props} r={6}>
+    //       <ImageShader image={image} fit="cover" rect={rectProps} />
+    //     </RoundedRect>
+    //   )}
+    // </Group>
   );
 };
 
@@ -133,16 +157,17 @@ const GridMagnification: React.FC = () => {
     });
   }, [window, inset]);
 
-  const gesture = Gesture.Pan()
-    .onBegin(e => {
+  const gesture = usePanGesture({
+    onBegin: e => {
       touchPos.value = { x: e.x, y: e.y, isFirst: true };
-    })
-    .onChange(e => {
+    },
+    onUpdate: e => {
       touchPos.value = { x: e.x, y: e.y, isFirst: false };
-    })
-    .onFinalize(() => {
+    },
+    onFinalize: () => {
       touchPos.value = null;
-    });
+    },
+  });
 
   const boxValues = useDerivedValue(
     () =>
@@ -217,8 +242,6 @@ const GridMagnification: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     alignSelf: 'center',
   },
 });

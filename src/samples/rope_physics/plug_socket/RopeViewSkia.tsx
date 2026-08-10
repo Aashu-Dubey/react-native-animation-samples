@@ -1,10 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  StyleSheet,
-  useColorScheme,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { useColorScheme, useWindowDimensions, View } from 'react-native';
 import {
   Canvas,
   Skia,
@@ -18,7 +13,6 @@ import {
 } from '@shopify/react-native-skia';
 import Animated, {
   cancelAnimation,
-  runOnJS,
   SharedValue,
   useAnimatedStyle,
   useDerivedValue,
@@ -26,7 +20,8 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { scheduleOnRN } from 'react-native-worklets';
+import { usePanGesture, GestureDetector } from 'react-native-gesture-handler';
 import { calculateSpringPoint, Point, slackDecline } from '../helper';
 import {
   COLOR_UNITS,
@@ -55,14 +50,14 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
   // keeps the track when switching Skia <---> SVG
   useDerivedValue(() => (activeUnit.value = activeIndex), [activeIndex]);
 
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      runOnJS(onGesture)(true, activeUnit.value);
-    })
-    .onChange(e => {
+  const panGesture = usePanGesture({
+    onActivate: () => {
+      scheduleOnRN(onGesture, true, activeUnit.value);
+    },
+    onUpdate: e => {
       point.value = { x: e.absoluteX, y: e.absoluteY };
-    })
-    .onEnd(e => {
+    },
+    onDeactivate: e => {
       // Here we check if plug position is within a socket (input or output)
       // if yes then update active output socket's UI based on that active input socket's theme
       const x = e.absoluteX;
@@ -82,7 +77,7 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
             y: unit.startY + UNIT_SIZE / 2,
           };
           // activeUnit.value = i;
-          runOnJS(onGesture)(false, i);
+          scheduleOnRN(onGesture, false, i);
           return;
         }
       }
@@ -93,10 +88,11 @@ const GestureHandler: React.FC<GestureHandlerProps> = ({
         point.value = withTiming(
           { x: unit.startX + UNIT_SIZE / 2, y: unit.startY + UNIT_SIZE / 2 },
           undefined,
-          () => runOnJS(onGesture)(false, activeUnit.value),
+          () => scheduleOnRN(onGesture, false, activeUnit.value),
         );
       }
-    });
+    },
+  });
 
   const style = useAnimatedStyle(() => {
     return {
@@ -126,13 +122,8 @@ interface PlugProp {
 
 // The gesture controllable end points
 const Plug: React.FC<PlugProp> = ({ point, activeUnit }) => {
-  const cx = useSharedValue(point.value.x);
-  const cy = useSharedValue(point.value.y);
-
-  useDerivedValue(() => {
-    cx.value = point.value.x;
-    cy.value = point.value.y;
-  }, [point]);
+  const cx = useDerivedValue(() => point.value.x, [point]);
+  const cy = useDerivedValue(() => point.value.y, [point]);
 
   const color = COLOR_UNITS[activeUnit.input];
   const plugColor = activeUnit.isGestureActive
@@ -169,17 +160,24 @@ const createPath = (
   dashPhase = 0.1,
 ) => {
   'worklet';
-  const path = Skia.Path.Make();
-  path.moveTo(point1.x, point1.y);
-  path.quadTo(slackPoint.x, slackPoint.y, point2.x, point2.y);
-  if (type === 'stroke') {
-    path.dash(8, 10, dashPhase);
-  }
-  const width = type === 'fill' ? 6 : 2;
-  path.stroke({ width, join: StrokeJoin.Round, cap: StrokeCap.Round });
-  path.close();
+  const path = Skia.PathBuilder.Make()
+    .moveTo(point1.x, point1.y)
+    .quadTo(slackPoint.x, slackPoint.y, point2.x, point2.y)
+    .build();
 
-  return path;
+  let targetPath = path;
+  if (type === 'stroke') {
+    targetPath = Skia.Path.Dash(path, 8, 10, dashPhase) ?? path;
+  }
+
+  const width = type === 'fill' ? 6 : 2;
+  const strokedPath = Skia.Path.Stroke(targetPath, {
+    width,
+    join: StrokeJoin.Round,
+    cap: StrokeCap.Round,
+  });
+
+  return strokedPath ?? targetPath;
 };
 
 const RopeView: React.FC<RopeProps> = ({
@@ -263,7 +261,7 @@ const RopeView: React.FC<RopeProps> = ({
   };
 
   const paths = useDerivedValue(() => {
-    runOnJS(updatePath)();
+    scheduleOnRN(updatePath);
 
     const newPos = position.value;
 
@@ -303,12 +301,7 @@ const RopeView: React.FC<RopeProps> = ({
 
   return (
     <View style={{ flex: 1 }}>
-      <Canvas
-        style={[
-          { width: window.width, height: window.height },
-          styles.container,
-        ]}
-      >
+      <Canvas style={{ width: window.width, height: window.height }}>
         <Plug point={plug1} {...{ activeUnit }} />
         <Plug point={plug2} {...{ activeUnit }} />
 
@@ -349,19 +342,5 @@ const RopeView: React.FC<RopeProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  boxView: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 6,
-    margin: 6,
-    overflow: 'hidden',
-  },
-});
 
 export default RopeView;

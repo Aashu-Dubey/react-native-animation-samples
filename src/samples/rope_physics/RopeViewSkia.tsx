@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import {
   StatusBar,
-  StyleSheet,
   useColorScheme,
   useWindowDimensions,
   View,
@@ -19,7 +18,6 @@ import {
 } from '@shopify/react-native-skia';
 import Animated, {
   cancelAnimation,
-  runOnJS,
   SharedValue,
   useAnimatedStyle,
   useDerivedValue,
@@ -27,7 +25,8 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { scheduleOnRN } from 'react-native-worklets';
+import { usePanGesture, GestureDetector } from 'react-native-gesture-handler';
 import { BackButton } from '../../components';
 import { calculateSpringPoint, Point, slackDecline } from './helper';
 import * as theme from '../../theme';
@@ -41,8 +40,10 @@ interface GestureHandlerProps {
 
 // Here we position a RN view above the Skia view (Plug), to control the component's gestures.
 const GestureHandler: React.FC<GestureHandlerProps> = ({ point }) => {
-  const panGesture = Gesture.Pan().onChange(e => {
-    point.value = { x: e.absoluteX, y: e.absoluteY };
+  const panGesture = usePanGesture({
+    onUpdate: e => {
+      point.value = { x: e.absoluteX, y: e.absoluteY };
+    },
   });
 
   const style = useAnimatedStyle(() => {
@@ -107,17 +108,24 @@ const createPath = (
   dashPhase = 0.1,
 ) => {
   'worklet';
-  const path = Skia.Path.Make();
-  path.moveTo(point1.x, point1.y);
-  path.quadTo(slackPoint.x, slackPoint.y, point2.x, point2.y);
-  if (type === 'stroke') {
-    path.dash(8, 10, dashPhase);
-  }
-  const width = type === 'fill' ? 6 : 2;
-  path.stroke({ width, join: StrokeJoin.Round, cap: StrokeCap.Round });
-  path.close();
+  const path = Skia.PathBuilder.Make()
+    .moveTo(point1.x, point1.y)
+    .quadTo(slackPoint.x, slackPoint.y, point2.x, point2.y)
+    .build();
 
-  return path;
+  let targetPath = path;
+  if (type === 'stroke') {
+    targetPath = Skia.Path.Dash(path, 8, 10, dashPhase) ?? path;
+  }
+
+  const width = type === 'fill' ? 6 : 2;
+  const strokedPath = Skia.Path.Stroke(targetPath, {
+    width,
+    join: StrokeJoin.Round,
+    cap: StrokeCap.Round,
+  });
+
+  return strokedPath ?? targetPath;
 };
 
 const RopeView: React.FC = () => {
@@ -163,7 +171,7 @@ const RopeView: React.FC = () => {
   };
 
   const paths = useDerivedValue(() => {
-    runOnJS(updatePath)();
+    scheduleOnRN(updatePath);
 
     const newPos = position.value;
 
@@ -208,12 +216,7 @@ const RopeView: React.FC = () => {
         backgroundColor={theme.rope(isDarkMode).bg}
       />
 
-      <Canvas
-        style={[
-          { width: window.width, height: window.height },
-          styles.container,
-        ]}
-      >
+      <Canvas style={{ width: window.width, height: window.height }}>
         <Plug point={plug1} />
         <Plug point={plug2} />
 
@@ -240,12 +243,5 @@ const RopeView: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-});
 
 export default RopeView;

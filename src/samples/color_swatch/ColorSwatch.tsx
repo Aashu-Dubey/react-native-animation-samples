@@ -1,22 +1,16 @@
 import React, { useCallback, useState } from 'react';
-import {
-  Pressable,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Pressable, StatusBar, StyleSheet, View } from 'react-native';
 import Animated, {
   SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  Gesture,
+  usePanGesture,
   GestureDetector,
-  GestureUpdateEvent,
-  PanGestureHandlerEventPayload,
+  PanGestureEvent,
 } from 'react-native-gesture-handler';
 import { BackButton } from '../../components';
 
@@ -107,32 +101,30 @@ const ColorSwatch = () => {
 
   const [activeColor, setActivecolor] = useState('rgb(64, 68, 88)');
 
-  const calculateDegree = useCallback(
-    (e: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
-      'worklet';
-      // Get an angle in radians, multiply that by 180 / π to get a value in degree:
-      // => "ITEM_HEIGHT - e.y" to take y axis value from bottom (0) to top (ITEM_HEIGHT), as opposed to gesture handler by default returning top (0) to bottom (ITEM_HEIGHT) on the Palette view.
-      // => "e.x - ITEM_WIDTH / 2" to consider x's start point from the center of the width.
-      let degree =
-        Math.atan2(ITEM_HEIGHT - e.y, e.x - ITEM_WIDTH / 2) * (180 / Math.PI);
-      // This condition is just to have possible 180 degree rotation on both sides while dragging
-      degree < -90 && (degree = degree + 360);
-      // Subtract from 90 as that is our initial palette's degree position
-      return 90 - degree;
-    },
-    [],
-  );
+  const calculateDegree = useCallback((e: PanGestureEvent) => {
+    'worklet';
+    // Get an angle in radians, multiply that by 180 / π to get a value in degree:
+    // => "ITEM_HEIGHT - e.y" to take y axis value from bottom (0) to top (ITEM_HEIGHT), as opposed to gesture handler by default returning top (0) to bottom (ITEM_HEIGHT) on the Palette view.
+    // => "e.x - ITEM_WIDTH / 2" to consider x's start point from the center of the width.
+    let degree =
+      Math.atan2(ITEM_HEIGHT - e.y, e.x - ITEM_WIDTH / 2) * (180 / Math.PI);
+    // This condition is just to have possible 180 degree rotation on both sides while dragging
+    degree < -90 && (degree = degree + 360);
+    // Subtract from 90 as that is our initial palette's degree position
+    return 90 - degree;
+  }, []);
 
-  const dragGesture = Gesture.Pan()
-    .onStart(e => {
+  const dragGesture = usePanGesture({
+    onActivate: e => {
       activeGesture.value = calculateDegree(e);
-    })
-    .onUpdate(e => {
+    },
+    onUpdate: e => {
       activeGesture.value = calculateDegree(e);
-    })
-    .onEnd(() => {
+    },
+    onDeactivate: () => {
       activeGesture.value = activeGesture.value > 90 ? 90 : 0;
-    });
+    },
+  });
 
   return (
     <>

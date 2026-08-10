@@ -7,7 +7,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
-  runOnJS,
   SharedValue,
   useAnimatedProps,
   useAnimatedStyle,
@@ -15,10 +14,10 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
-  AnimatedProps,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { usePanGesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { G, Path, Circle, GProps } from 'react-native-svg';
+import { scheduleOnRN } from 'react-native-worklets';
 import { BackButton } from '../../components';
 import { calculateSpringPoint, Point, slackDecline } from './helper';
 import * as theme from '../../theme';
@@ -32,8 +31,10 @@ interface GestureHandlerProps {
 
 // Here we position a RN view above the SVG view (Plug), to control the component's gestures.
 const GestureHandler: React.FC<GestureHandlerProps> = ({ point }) => {
-  const panGesture = Gesture.Pan().onChange(e => {
-    point.value = { x: e.absoluteX, y: e.absoluteY };
+  const panGesture = usePanGesture({
+    onUpdate: e => {
+      point.value = { x: e.absoluteX, y: e.absoluteY };
+    },
   });
 
   const style = useAnimatedStyle(() => {
@@ -81,21 +82,19 @@ const RopeViewSvg: React.FC = () => {
   // We calculate time passed since screen initialisation to perform rope stroke animation.
   const initialTime = useRef(Date.now());
 
-  const plug1AnimatedProps = useAnimatedProps(() => ({ 
-    // ...plug1.value,
-    transform: [
-      { translateX: plug1.value.x },
-      { translateY: plug1.value.y },
-    ],
-   }), [plug1]);
+  const plug1AnimatedProps = useAnimatedProps(
+    () => ({
+      transform: [{ translateX: plug1.value.x }, { translateY: plug1.value.y }],
+    }),
+    [plug1],
+  );
 
-  const plug2AnimatedProps = useAnimatedProps(() => ({ 
-    // ...plug2.value,
-    transform: [
-      { translateX: plug2.value.x },
-      { translateY: plug2.value.y },
-    ],
-   }), [plug2]);
+  const plug2AnimatedProps = useAnimatedProps(
+    () => ({
+      transform: [{ translateX: plug2.value.x }, { translateY: plug2.value.y }],
+    }),
+    [plug2],
+  );
 
   // Calculates new spring position
   const updatePath = () => {
@@ -112,7 +111,7 @@ const RopeViewSvg: React.FC = () => {
   };
 
   const path = useDerivedValue(() => {
-    runOnJS(updatePath)();
+    scheduleOnRN(updatePath);
 
     return `M${plug1.value.x} ${plug1.value.y} Q${quadPos.value.x},${quadPos.value.y} ${plug2.value.x},${plug2.value.y}`;
   }, [plug1, plug2, quadPos, updatePath]);
@@ -129,7 +128,7 @@ const RopeViewSvg: React.FC = () => {
     };
   }, [path, loop]);
 
-  const renderPlug = (animatedProps: AnimatedProps<GProps>) => (
+  const renderPlug = (animatedProps: Partial<GProps>) => (
     <AnimatedGroup animatedProps={animatedProps}>
       <Circle r={PLUG_RADIUS} fill="dodgerblue" />
       <Circle

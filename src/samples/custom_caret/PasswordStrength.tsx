@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Text,
-  View,
-  StyleSheet,
-  SafeAreaView,
-  TextInput,
-  Pressable,
-} from 'react-native';
+import { Text, View, StyleSheet, TextInput, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -72,7 +65,7 @@ const PasswordStrength = () => {
   const [inputDimension, setInputDimension] = useState({ width: 0, height: 0 });
   const [caretPosition, setCaretPosition] = useState({ start: 0, end: 0 });
 
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   const cursorOpacity = useSharedValue(1);
   const cursorX = useSharedValue(0);
@@ -86,48 +79,52 @@ const PasswordStrength = () => {
     } else {
       cursorOpacity.value = withTiming(password.length > 0 ? 1 : 0);
     }
-  }, [password, isInputFocused]);
+  }, [password, isInputFocused, cursorOpacity, tickState]);
 
-  const cursorStyle = useAnimatedStyle(
-    () => {
-      let caretWidth = caretPosition.start < password.length ? 2 : 4;
-      let caretPositionX = cursorX.value;
-      if (!isInputFocused && password.length > 0) {
-        caretWidth = inputDimension.height;
-        caretPositionX = inputDimension.width - inputDimension.height;
-      } else {
-        // Getting some incorrect ~3 width with no text, so setting it 0 here
-        if (password.length === 0 || caretPosition.start === 0) {
-          caretPositionX = 0;
-        }
+  const cursorStyle = useAnimatedStyle(() => {
+    let caretWidth = caretPosition.start < password.length ? 2 : 4;
+    let caretPositionX = cursorX.value;
+    if (!isInputFocused && password.length > 0) {
+      caretWidth = inputDimension.height;
+      caretPositionX = inputDimension.width - inputDimension.height;
+    } else {
+      // Getting some incorrect ~3 width with no text, so setting it 0 here
+      if (password.length === 0 || caretPosition.start === 0) {
+        caretPositionX = 0;
       }
+    }
 
-      return {
-        width: caretWidth,
-        //   left: cursorX.value,
-        transform: [
-          {
-            translateX: withTiming(
-              caretPositionX,
-              { duration: 250 },
-              finished => {
-                if (finished && !isInputFocused) {
-                  tickState.value = 1;
-                }
-              },
-            ),
-          },
-        ],
-      };
-    },
-     [cursorX, caretPosition, password, inputDimension, tickState, isInputFocused]
-  );
+    return {
+      width: caretWidth,
+      //   left: cursorX.value,
+      transform: [
+        {
+          translateX: withTiming(
+            caretPositionX,
+            { duration: 250 },
+            finished => {
+              if (finished && !isInputFocused) {
+                tickState.value = 1;
+              }
+            },
+          ),
+        },
+      ],
+    };
+  }, [
+    cursorX,
+    caretPosition,
+    password,
+    inputDimension,
+    tickState,
+    isInputFocused,
+  ]);
 
-    const cursorOpacityStyle = useAnimatedStyle(() => {
-      return {
-        opacity: cursorOpacity.value,
-      };
-    }, [cursorOpacity]);
+  const cursorOpacityStyle = useAnimatedStyle(() => {
+    return {
+      opacity: cursorOpacity.value,
+    };
+  }, [cursorOpacity]);
 
   const tickAnim = useAnimatedStyle(() => {
     return {
@@ -165,7 +162,7 @@ const PasswordStrength = () => {
   };
 
   return (
-    <SafeAreaView>
+    <View>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.fieldTitle}>Password</Text>
@@ -239,11 +236,26 @@ const PasswordStrength = () => {
           <Text style={{ color: 'white', fontWeight: '700' }}>Submit</Text>
         </Pressable>
       </View>
+      {/* Approach 1 - Using hidden TextInput */}
+      {/* <TextInput
+        style={{ paddingHorizontal: 0, position: 'absolute', opacity: 0 }}
+        // secureTextEntry
+        value={name.substring(0, caretPosition.start)}
+        onLayout={event => {
+          // Update cursor position, shouldn't extend input total width
+          cursorX.value = Math.min(
+            event.nativeEvent.layout.width,
+            inputDimension.width,
+          );
+        }}
+        pointerEvents="none"
+      /> */}
+
+      {/* Approach 2 - Using hidden Text */}
       <View style={{ position: 'absolute', opacity: 0 }} pointerEvents="none">
-        <TextInput
-          style={{ paddingHorizontal: 0 }}
-          //   secureTextEntry
-          value={password.substring(0, caretPosition.start)}
+        <Text
+          style={{ alignSelf: 'flex-start' }}
+          numberOfLines={1}
           onLayout={event => {
             // Update cursor position, shouldn't extend input total width
             cursorX.value = Math.min(
@@ -251,9 +263,11 @@ const PasswordStrength = () => {
               inputDimension.width,
             );
           }}
-        />
+        >
+          {password.substring(0, caretPosition.start)}
+        </Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
