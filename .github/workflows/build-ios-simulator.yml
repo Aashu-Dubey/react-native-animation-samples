@@ -17,7 +17,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 'corepack enable' is needed for now till it's experimental, may remove the command once it becomes stable in later node releases
       - name: Enable Corepack
@@ -25,12 +25,12 @@ jobs:
 
       # Setup Web environment to install packages.
       - name: Setup Web environment
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'yarn'
 
-      - uses: hendrikmuhs/ccache-action@v1.2
+      - uses: hendrikmuhs/ccache-action@v1.2.23
         name: Xcode Compile Cache
         with:
           key: ${{ runner.os }}-ccache # makes a unique key w/related restore key internally
@@ -38,7 +38,7 @@ jobs:
           max-size: 1500M
 
       - name: Restore node_modules from cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock') }}
@@ -49,7 +49,7 @@ jobs:
         run: yarn install --immutable
 
       - name: Restore Pods cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ios/Pods
@@ -59,7 +59,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pods-
 
       - name: Restore build artifacts from cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ios/build
           key: ${{ runner.os }}-ios-derived-data-${{ hashFiles('ios/Podfile.lock') }}
@@ -98,7 +98,7 @@ jobs:
           zip -r -y -o output/RN_Animations.zip RN_Animations.app
 
       - name: Save build file as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rn_animation_samples_ios
           path: ios/build/Build/Products/Release-iphonesimulator/output
